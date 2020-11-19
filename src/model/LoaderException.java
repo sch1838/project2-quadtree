@@ -49,4 +49,17 @@ public class LoaderException extends Exception {
             System.out.println("File or directory does not exist: " + this.path);
         }
     }
+
+    public static class DirectoryCreationException extends LoaderException {
+        private final String path;
+
+        public DirectoryCreationException(String path) {
+            this.path = path;
+        }
+
+        @Override
+        public void printStackTrace() {
+            System.out.println("Failed to create missing directory: " + this.path);
+        }
+    }
 }
