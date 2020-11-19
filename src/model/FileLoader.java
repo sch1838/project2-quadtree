@@ -1,5 +1,7 @@
 package model;
 
+import ptui.RITUncompress;
+
 import java.io.*;
 import java.net.URL;
 import java.util.ArrayList;
@@ -18,13 +20,13 @@ public class FileLoader {
      *
      * @return A list of integers read from each line in the file
      */
-    public static List<Integer> secureFileContents(URL directoryHeader, String path) {
+    public static List<Integer> secureLoadFileContents(URL directoryHeader, String path) {
         try {
             // Attempt to load the file from the uncompressed image directory
 
             List<Integer> lineValues = FileLoader.loadFileContents(directoryHeader, path);
             double dimension = Math.sqrt(lineValues.size());
-            if(directoryHeader != COMP && Math.floor(dimension) != dimension) {
+            if (directoryHeader != COMP && Math.floor(dimension) != dimension) {
                 // Do not check dimension when loading compressed files
                 throw new LoaderException.FileDimensionException(dimension);
             } else {
@@ -59,7 +61,7 @@ public class FileLoader {
 
     private static List<Integer> loadFileContents(URL directoryHeader, String path) throws IOException, LoaderException.IntegralColorException, NumberFormatException, LoaderException.UnreadablePathException {
 
-        if(directoryHeader == null) {
+        if (directoryHeader == null) {
             // Do not attempt to load the file with a null directory header
             throw new LoaderException.UnreadablePathException("null directory header");
         }
@@ -68,9 +70,7 @@ public class FileLoader {
 
         List<Integer> lineValues = new ArrayList<>();
 
-
-
-        if(file.exists()) {
+        if (file.exists()) {
             BufferedReader reader = new BufferedReader(new FileReader(file));
 
             String line;
@@ -89,10 +89,48 @@ public class FileLoader {
 
                 lineValues.add(value);
             }
+
+            reader.close();
         } else {
             throw new LoaderException.UnreadablePathException(file.getPath());
         }
 
         return lineValues;
+    }
+
+    public static void secureWriteFileContents(int[][] pixelGrid, URL directoryHeader, String path) {
+        try {
+            writeFileContents(pixelGrid, directoryHeader, path);
+        } catch (LoaderException.DirectoryCreationException | LoaderException.UnreadablePathException | IOException e) {
+            e.printStackTrace();
+            System.exit(-1);
+        }
+    }
+
+    private static void writeFileContents(int[][] pixelGrid, URL directoryHeader, String path) throws LoaderException.UnreadablePathException, IOException, LoaderException.DirectoryCreationException {
+
+        if (directoryHeader == null) {
+            // Do not attempt to load the file with a null directory header
+            throw new LoaderException.UnreadablePathException("null directory header");
+        }
+
+        File file = new File(directoryHeader.getPath() + path);
+
+        if (!file.exists()) {
+            if(!file.mkdirs()) {
+                throw new LoaderException.DirectoryCreationException(file.getPath());
+            }
+        }
+
+        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file)));
+
+        for (int[] rows : pixelGrid) {
+            for (int value : rows) {
+                writer.write("" + value);
+                writer.newLine();
+            }
+        }
+
+        writer.close();
     }
 }
