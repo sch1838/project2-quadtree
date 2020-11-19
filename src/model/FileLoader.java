@@ -75,8 +75,8 @@ public class FileLoader {
 
             String line;
 
-            if(directoryHeader == COMP) {
-                line = reader.readLine();
+            if (directoryHeader == COMP) {
+                RITUncompress.dimension = Integer.parseInt(reader.readLine());
             }
 
             while ((line = reader.readLine()) != null) {

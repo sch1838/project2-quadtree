@@ -7,12 +7,8 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
-import model.LoaderException;
 import model.FileLoader;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -25,7 +21,7 @@ public class RITViewer extends Application {
 
     @Override
     public void start(Stage stage) throws Exception {
-        displayImage(stage, FileLoader.secureFileContents(FileLoader.UNCM, path));
+        displayImage(stage, FileLoader.secureLoadFileContents(FileLoader.UNCM, path));
     }
 
     /**
