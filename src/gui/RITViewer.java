@@ -15,6 +15,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * The RITViewer class is an application that facilitates the display of a square image whose path is determined from
+ * command line arguments. File loading is handled in {@link FileLoader}.
+ *
+ * @author Samuel Henderson
+ */
 public class RITViewer extends Application {
 
     @Override
@@ -27,11 +33,13 @@ public class RITViewer extends Application {
      * provided list.
      */
     private void displayImage(Stage stage, List<Integer> lineValues) {
+        // Acquire dimension and create canvas
         int dimension = (int) Math.sqrt(lineValues.size());
         Canvas canvas = new Canvas(dimension, dimension);
 
         GraphicsContext context = canvas.getGraphicsContext2D();
 
+        // Fill all of the pixels
         for (int row = 0; row < dimension; ++ row) {
             for (int col = 0; col < dimension; ++ col) {
                 int rgb = lineValues.get(row * dimension + col);
@@ -41,8 +49,8 @@ public class RITViewer extends Application {
             }
         }
 
+        // Set scene and show stage
         stage.setScene(new Scene(new Group(canvas)));
-
         stage.show();
     }
 
@@ -92,12 +100,13 @@ public class RITViewer extends Application {
         return new ArrayList<>();
     }
 
+    /** The file to be loaded as an image. **/
     private static String path;
 
     public static void main(String[] args) {
         if (args.length != 1) {
             // Handle missing or invalid argument(s)
-            System.out.println("Usage: ");
+            System.out.println("Usage: RITViewer <filename>\nSpecified file must be within src/images/uncompressed or some subdirectory of it.");
         } else {
             path = args[0];
             Application.launch(args);
