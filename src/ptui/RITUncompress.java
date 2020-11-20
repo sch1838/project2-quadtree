@@ -4,8 +4,19 @@ import model.FileLoader;
 import model.QuadTree;
 import model.RITQTNode;
 
+import java.net.URL;
+
+/**
+ * The RITUncompress class is a command line program that uncompresses images stored in a QuadTree format. File loading
+ * is handled in {@link FileLoader}.
+ *
+ * @author Samuel Henderson
+ */
 public class RITUncompress {
 
+    /**
+     * Facilitates the process of uncompressing the file provided as an argument in the command line.
+     */
     private static void uncompress() {
         System.out.println("Uncompressing: " + source);
 
@@ -15,8 +26,10 @@ public class RITUncompress {
         FileLoader.secureWriteFileContents(QuadTree.extract(tree, (int) Math.sqrt(dimension)), FileLoader.UNCM, destination);
     }
 
+    /** Respectively the source and destination file names for uncompression. **/
     private static String source, destination;
 
+    /** The dimension of the image to uncompress. This is updated by {@link FileLoader#loadFileContents(URL, String)} **/
     public static int dimension;
 
     public static void main(String[] args) {
