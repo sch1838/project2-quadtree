@@ -37,4 +37,12 @@ public class QuadTree {
             extract(root.getLowerRight(), pixelGrid, row + subDim, col + subDim, subDim);
         }
     }
+
+    public static String preorder(RITQTNode root) {
+        if(0 <= root.getVal()) {
+            return root.getVal() + " ";
+        } else {
+            return root.getVal() + " " + preorder(root.getUpperLeft()) + preorder(root.getUpperRight()) + preorder(root.getLowerLeft()) + preorder(root.getLowerRight());
+        }
+    }
 }

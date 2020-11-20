@@ -102,6 +102,7 @@ public class FileLoader {
         try {
             writeFileContents(pixelGrid, directoryHeader, path);
         } catch (LoaderException.DirectoryCreationException | LoaderException.UnreadablePathException | IOException e) {
+            // Handle nonexistent file, unreadable file, and failure to create file
             e.printStackTrace();
             System.exit(-1);
         }
@@ -121,6 +122,8 @@ public class FileLoader {
                 throw new LoaderException.DirectoryCreationException(file.getPath());
             }
         }
+
+        System.out.println("Output file: " + file.getPath());
 
         BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file)));
 
