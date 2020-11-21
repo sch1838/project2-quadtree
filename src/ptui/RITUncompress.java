@@ -29,7 +29,7 @@ public class RITUncompress {
     /** Respectively the source and destination file names for uncompression. **/
     private static String source, destination;
 
-    /** The dimension of the image to uncompress. This is updated by {@link FileLoader#loadFileContents(URL, String)} **/
+    /** The dimension of the image to uncompress. This is updated by {@link FileLoader#loadFileContents(URL, String)}. **/
     public static int dimension;
 
     public static void main(String[] args) {
