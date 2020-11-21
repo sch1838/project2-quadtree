@@ -14,14 +14,51 @@ public class QuadTree {
 
     /**
      * Provides the root {@link RITQTNode} of a QuadTree data structure parsed from a correctly formatted list of
-     * integral values.
+     * integral values that has been retrieved from a compressed image file.
      */
-    public static RITQTNode fromContents(List<Integer> lineValues) {
+    public static RITQTNode fromCompressedContents(List<Integer> lineValues) {
         if(0 <= lineValues.get(0)) {
             return new RITQTNode(lineValues.remove(0));
         } else {
-            return new RITQTNode(lineValues.remove(0), fromContents(lineValues), fromContents(lineValues), fromContents(lineValues), fromContents(lineValues));
+            return new RITQTNode(lineValues.remove(0), fromCompressedContents(lineValues), fromCompressedContents(lineValues), fromCompressedContents(lineValues), fromCompressedContents(lineValues));
         }
+    }
+
+    /**
+     * Provides the root {@link RITQTNode} of a QuadTree data structure parsed from a list of
+     * integral values that has been retrieved from an uncompressed image file.
+     */
+    public static RITQTNode fromUncompressedContents(List<Integer> lineValues, int row, int col, int dimension) {
+
+        // Full dimension must remain as a constant value to access correct index in list
+        int fullDim = (int) Math.sqrt(lineValues.size());
+        int quadrantCheck = lineValues.get(row * fullDim + col);
+
+        for (int r = row; r < row + dimension; ++ r) {
+            for (int c = col; c < col + dimension; ++ c) {
+
+                // Scan the current quadrant for a color different from the corner color
+                // Quadrant dimension is reflected by the dimension parameter
+                int val = lineValues.get(r * fullDim + c);
+
+                if(val != quadrantCheck) {
+
+                    // This quadrant cannot be compressed, so it becomes a root to four nodes that may be compressed
+                    // Scan the four quadrants that compose this quadrant to see if compression is possible, then
+                    // add them to the new root node as subsidiaries
+                    int subDim = dimension / 2;
+                    return new RITQTNode(-1,
+                            fromUncompressedContents(lineValues, row,          col,          subDim),
+                            fromUncompressedContents(lineValues, row,          col + subDim, subDim),
+                            fromUncompressedContents(lineValues, row + subDim, col,          subDim),
+                            fromUncompressedContents(lineValues, row + subDim, col + subDim, subDim)
+                    );
+                }
+            }
+        }
+
+        // By this point, all values in the quadrant have been verified to be equal, so compression is possible
+        return new RITQTNode(quadrantCheck);
     }
 
     /**

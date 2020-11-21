@@ -21,7 +21,7 @@ public class RITUncompress {
         System.out.println("Uncompressing: " + source);
 
         // Create the quadtree structure from the compressed file
-        RITQTNode tree = QuadTree.fromContents(FileLoader.secureLoadFileContents(FileLoader.COMP, source));
+        RITQTNode tree = QuadTree.fromCompressedContents(FileLoader.secureLoadFileContents(FileLoader.COMP, source));
         System.out.println("QuadTree: " + QuadTree.preorder(tree));
         FileLoader.secureWriteFileContents(QuadTree.extract(tree, (int) Math.sqrt(dimension)), FileLoader.UNCM, destination);
     }
