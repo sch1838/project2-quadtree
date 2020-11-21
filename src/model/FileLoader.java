@@ -1,5 +1,6 @@
 package model;
 
+import ptui.RITCompress;
 import ptui.RITUncompress;
 
 import java.io.*;
@@ -121,14 +122,34 @@ public class FileLoader {
     }
 
     /**
-     * Writes a two dimensional array of integers to a file specified by the provided directoryHeader and path.
+     * Writes a two dimensional array of objects to a file specified by the provided {@link URL} directoryHeader and
+     * path.
      *
-     * <p>This method is used to call {@link FileLoader#writeFileContents(int[][], URL, String)} with automatic
-     * attention to any thrown exceptions.</p>
+     * <p>This method is used to convert an array into a list of line values before attempting to write the array
+     * contents to a file.</p>
      */
     public static void secureWriteFileContents(int[][] pixelGrid, URL directoryHeader, String path) {
+        List<String> valueList = new ArrayList<>();
+
+        // Convert grid into list for writing
+        for (int[] row : pixelGrid) {
+            for (int value : row) {
+                valueList.add(value + "");
+            }
+        }
+
+        secureWriteFileContents(valueList, directoryHeader, path);
+    }
+
+    /**
+     * Writes a list of objects to a file specified by the provided directoryHeader {@link URL} and path.
+     *
+     * <p>This method is used to call {@link FileLoader#writeFileContents(List, URL, String)} with automatic attention
+     * to any thrown exceptions.</p>
+     */
+    public static void secureWriteFileContents(List<?> lineValues, URL directoryHeader, String path) {
         try {
-            writeFileContents(pixelGrid, directoryHeader, path);
+            writeFileContents(lineValues, directoryHeader, path);
         } catch (LoaderException.DirectoryCreationException | LoaderException.UnreadablePathException | IOException e) {
             // Handle nonexistent file, unreadable file, and failure to create file
             e.printStackTrace();
@@ -137,16 +158,15 @@ public class FileLoader {
     }
 
     /**
-     * Writes a two dimensional array of integers to a file specified by the provided directoryHeader and path.
+     * Writes a {@link List} of objects to a file specified by the provided directoryHeader {@link URL} and path.
      *
-     * <p>Each integer in the pixelGrid will be written to its own line in an existent file. If the file does not exist,
+     * <p>Each object in lineValues will be written to its own line in an existent file. If the file does not exist,
      * this method will attempt to create it.</p>
      *
      * @throws LoaderException.UnreadablePathException Thrown when the provided path cannot be read or does not exist
      * @throws LoaderException.DirectoryCreationException Thrown when a file cannot be created at the provided path
      */
-    private static void writeFileContents(int[][] pixelGrid, URL directoryHeader, String path) throws LoaderException.UnreadablePathException, IOException, LoaderException.DirectoryCreationException {
-
+    private static void writeFileContents(List<?> lineValues, URL directoryHeader, String path) throws LoaderException.UnreadablePathException, IOException, LoaderException.DirectoryCreationException {
         if (directoryHeader == null) {
             // Do not attempt to load the file with a null directory header
             throw new LoaderException.UnreadablePathException("null directory header");
@@ -169,13 +189,16 @@ public class FileLoader {
 
         BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file)));
 
-        for (int[] rows : pixelGrid) {
-            for (int value : rows) {
+        if(directoryHeader == COMP) {
+            // Write image size as first line in compressed file
+            writer.write(RITCompress.dimension + "");
+            writer.newLine();
+        }
 
-                // Write contents to file
-                writer.write("" + value);
-                writer.newLine();
-            }
+        for (Object value : lineValues) {
+            // Write each value to its own line in the file
+            writer.write(value.toString());
+            writer.newLine();
         }
 
         writer.close();
