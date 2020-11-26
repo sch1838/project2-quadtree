@@ -133,9 +133,6 @@ public class FileLoader {
             }
         }
 
-        // Notify user of output location
-        System.out.println("Output file: " + file.getPath());
-
         BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file)));
 
         for (Object value : lineValues) {
