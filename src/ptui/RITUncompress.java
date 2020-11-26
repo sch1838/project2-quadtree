@@ -4,6 +4,7 @@ import model.FileLoader;
 import model.QuadTree;
 import model.RITQTNode;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,36 +16,58 @@ import java.util.List;
  */
 public class RITUncompress {
 
-    /**
-     * Facilitates the process of uncompressing the file provided as an argument in the command line.
-     */
-    private static void uncompress() {
-        System.out.println("Uncompressing: " + source);
+    private String source, destination;
+
+    private List<String> writeContents;
+
+    private RITQTNode treeContents;
+
+    public void uncompress() {
+        if(this.source == null || this.destination == null) {
+            System.out.println("Failed to uncompress: null source or destination");
+            return;
+        }
 
         List<Integer> lineValues = FileLoader.secureLoadFileContents(FileLoader.COMP_HEAD + source);
         dimension = lineValues.remove(0);
 
         // Create the quadtree structure from the compressed file
-        RITQTNode tree = QuadTree.fromCompressedContents(lineValues);
-        System.out.println("QuadTree: " + QuadTree.preorder(tree));
+        treeContents = QuadTree.fromCompressedContents(lineValues);
 
-        List<Integer> writeValues = new ArrayList<>();
+        List<String> writeValues = new ArrayList<>();
 
-        for (int[] row : QuadTree.extract(tree, (int) Math.sqrt(dimension))) {
+        for (int[] row : QuadTree.extract(treeContents, (int) Math.sqrt(dimension))) {
             for (int value : row) {
-                writeValues.add(value);
+                writeValues.add(value + "");
             }
         }
 
-        FileLoader.secureWriteFileContents(writeValues, FileLoader.UNCM_HEAD + destination);
+        this.writeContents = writeValues;
     }
 
-    public static void uncompress(String path) {
-        List<Integer> lineValues = FileLoader.secureLoadFileContents(path);
+    public List<String> listContents() {
+        return this.writeContents;
     }
 
-    /** Respectively the source and destination file names for uncompression. **/
-    private static String source, destination;
+    public RITQTNode treeContents() {
+        return this.treeContents;
+    }
+
+    public RITUncompress(String source, String destination) {
+        this.source = source; this.destination = destination;
+    }
+
+    public void modifySource(String path) {
+        this.source = path;
+    }
+
+    public void modifyDestination(String path) {
+        this.destination = path;
+    }
+
+    public String destination() {
+        return this.destination;
+    }
 
     /** The dimension of the image to uncompress. **/
     public static int dimension;
@@ -54,8 +77,12 @@ public class RITUncompress {
             // Handle missing or invalid argument(s)
             System.out.println("Usage: java RITUncompress compressed.rit uncompressed.txt");
         } else {
-            source = args[0]; destination = args[1];
-            uncompress();
+            RITUncompress uncompress = new RITUncompress(args[0], args[1]);
+            System.out.println("Uncompressing: " + uncompress.source);
+            uncompress.uncompress();
+            System.out.println("QuadTree: " + QuadTree.preorder(uncompress.treeContents()));
+            FileLoader.secureWriteFileContents(uncompress.listContents(), FileLoader.UNCM_HEAD + uncompress.destination());
+            System.out.println("Output file: " + new File(FileLoader.UNCM_HEAD + uncompress.destination()).getAbsolutePath());
         }
     }
 }

@@ -22,19 +22,19 @@ public class RITViewer extends Application {
     @Override
     public void start(Stage stage) throws Exception {
         List<Integer> lineValues = FileLoader.secureLoadFileContents(FileLoader.UNCM_HEAD + path);
-        displayImage(stage, lineValues);
+
+        stage.setScene(new Scene(new Group(fillCanvas(lineValues, 1))));
+        stage.show();
     }
 
-    /**
-     * Displays a list of integral values as a square image whose side length is the square root of the size of the
-     * provided list.
-     */
-    private void displayImage(Stage stage, List<Integer> lineValues) {
+    public static Canvas fillCanvas(List<Integer> lineValues, int zoom) {
         // Acquire dimension and create canvas
         int dimension = (int) Math.sqrt(lineValues.size());
-        Canvas canvas = new Canvas(dimension, dimension);
+        Canvas canvas = new Canvas(dimension * zoom, dimension * zoom);
 
         GraphicsContext context = canvas.getGraphicsContext2D();
+
+        zoom = Math.max(1, zoom);
 
         // Fill all of the pixels
         for (int row = 0; row < dimension; ++ row) {
@@ -42,13 +42,11 @@ public class RITViewer extends Application {
                 int rgb = lineValues.get(row * dimension + col);
 
                 context.setFill(Color.rgb(rgb, rgb, rgb));
-                context.fillRect(col, row, col + 1, row + 1);
+                context.fillRect(col * zoom, row * zoom, (col + 1) * zoom, (row + 1) * zoom);
             }
         }
 
-        // Set scene and show stage
-        stage.setScene(new Scene(new Group(canvas)));
-        stage.show();
+        return canvas;
     }
 
     /** The file to be loaded as an image. **/
