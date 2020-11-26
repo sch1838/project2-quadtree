@@ -4,7 +4,8 @@ import model.FileLoader;
 import model.QuadTree;
 import model.RITQTNode;
 
-import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * The RITUncompress class is a command line program that uncompresses images stored in a QuadTree format. File loading
@@ -20,16 +21,32 @@ public class RITUncompress {
     private static void uncompress() {
         System.out.println("Uncompressing: " + source);
 
+        List<Integer> lineValues = FileLoader.secureLoadFileContents(FileLoader.COMP_HEAD + source);
+        dimension = lineValues.remove(0);
+
         // Create the quadtree structure from the compressed file
-        RITQTNode tree = QuadTree.fromCompressedContents(FileLoader.secureLoadFileContents(FileLoader.COMP, source));
+        RITQTNode tree = QuadTree.fromCompressedContents(lineValues);
         System.out.println("QuadTree: " + QuadTree.preorder(tree));
-        FileLoader.secureWriteFileContents(QuadTree.extract(tree, (int) Math.sqrt(dimension)), FileLoader.UNCM, destination);
+
+        List<Integer> writeValues = new ArrayList<>();
+
+        for (int[] row : QuadTree.extract(tree, (int) Math.sqrt(dimension))) {
+            for (int value : row) {
+                writeValues.add(value);
+            }
+        }
+
+        FileLoader.secureWriteFileContents(writeValues, FileLoader.UNCM_HEAD + destination);
+    }
+
+    public static void uncompress(String path) {
+        List<Integer> lineValues = FileLoader.secureLoadFileContents(path);
     }
 
     /** Respectively the source and destination file names for uncompression. **/
     private static String source, destination;
 
-    /** The dimension of the image to uncompress. This is updated by {@link FileLoader#loadFileContents(URL, String)}. **/
+    /** The dimension of the image to uncompress. **/
     public static int dimension;
 
     public static void main(String[] args) {

@@ -4,7 +4,9 @@ import model.FileLoader;
 import model.QuadTree;
 import model.RITQTNode;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -22,14 +24,18 @@ public class RITCompress {
         System.out.println("Compressing: " + source);
 
         // Read the contents of the file to be compressed (the source) and convert into a QuadTree structure
-        List<Integer> lineValues = FileLoader.secureLoadFileContents(FileLoader.UNCM, source);
-        dimension = lineValues.size();
-        RITQTNode tree = QuadTree.fromUncompressedContents(lineValues, 0, 0, (int) Math.sqrt(dimension));
+        List<Integer> fileValues = FileLoader.secureLoadFileContents(FileLoader.UNCM_HEAD + source);
+        int dimension = fileValues.size();
+
+        RITQTNode tree = QuadTree.fromUncompressedContents(fileValues, 0, 0, (int) Math.sqrt(dimension));
         String preorder = QuadTree.preorder(tree); String[] compressed = preorder.split(" ");
         System.out.println("QuadTree: " + preorder);
 
+        List<String> writeValues = new ArrayList<>(Collections.singleton("" + dimension));
+        writeValues.addAll(Arrays.asList(compressed));
+
         // Write the QuadTree preorder output into the destination file
-        FileLoader.secureWriteFileContents(Arrays.asList(compressed), FileLoader.COMP, destination);
+        FileLoader.secureWriteFileContents(writeValues, FileLoader.COMP_HEAD + destination);
 
         // Provide compression comparison and percentage
         System.out.println("Compression: " + dimension + " -> " + (compressed.length + 1) + " (" + (100 * (compressed.length + 1) / dimension));
@@ -37,9 +43,6 @@ public class RITCompress {
 
     /** Respectively the source and destination file names for compression. **/
     private static String source, destination;
-
-    /** The dimension of the image to uncompress. This is always updated by {@link RITCompress#compress()}. **/
-    public static int dimension;
 
     public static void main(String[] args) {
         if (args.length != 2) {

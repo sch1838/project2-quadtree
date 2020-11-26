@@ -21,7 +21,8 @@ public class RITViewer extends Application {
 
     @Override
     public void start(Stage stage) throws Exception {
-        displayImage(stage, FileLoader.secureLoadFileContents(FileLoader.UNCM, path));
+        List<Integer> lineValues = FileLoader.secureLoadFileContents(FileLoader.UNCM_HEAD + path);
+        displayImage(stage, lineValues);
     }
 
     /**

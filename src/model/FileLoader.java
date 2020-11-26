@@ -1,12 +1,11 @@
 package model;
 
-import ptui.RITCompress;
-import ptui.RITUncompress;
-
 import java.io.*;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * The FileLoader class provides methods to read and write file data.
@@ -15,27 +14,15 @@ import java.util.List;
  */
 public class FileLoader {
 
-    /** The directory header for compressed image files. **/
-    public static final URL COMP = FileLoader.class.getClassLoader().getResource("images/compressed/");
+    public static final String COMP_HEAD = "images/compressed/", UNCM_HEAD = "images/uncompressed/";
 
-    /** The directory header for uncompressed image files. **/
-    public static final URL UNCM = FileLoader.class.getClassLoader().getResource("images/uncompressed/");
-
-    /**
-     * Loads the contents of the specified file if the file exists.
-     *
-     * <p>The file read is specified as a single command line argument. Any exceptions that are thrown during
-     * file loading should be caught here.</p>
-     *
-     * @return A list of integers read from each line in the file
-     */
-    public static List<Integer> secureLoadFileContents(URL directoryHeader, String path) {
+    public static List<Integer> secureLoadFileContents(String absolutePath) {
         try {
             // Attempt to load the file from the uncompressed image directory
 
-            List<Integer> lineValues = FileLoader.loadFileContents(directoryHeader, path);
+            List<Integer> lineValues = FileLoader.loadFileContents(absolutePath);
             double dimension = Math.sqrt(lineValues.size());
-            if (directoryHeader != COMP && Math.floor(dimension) != dimension) {
+            if (!isFileCompressed(absolutePath) && Math.floor(dimension) != dimension) {
                 // Do not check dimension when loading compressed files
                 throw new LoaderException.FileDimensionException(dimension);
             } else {
@@ -45,7 +32,7 @@ public class FileLoader {
             // Handle nonexistent file
 
             f.printStackTrace();
-            System.out.println("File does not exist: " + path);
+            System.out.println("File does not exist: " + absolutePath);
             System.exit(-1);
         } catch (IOException | LoaderException.IntegralColorException | LoaderException.UnreadablePathException | LoaderException.FileDimensionException e) {
             // Handle generic IOException, unreadable files, nonsquare files, and color value not in valid range
@@ -59,8 +46,7 @@ public class FileLoader {
             // UnreadablePathException during the loadFileContents call that occurs in the try clause and is handled
             // before this one
 
-            assert directoryHeader != null;
-            System.out.println("Exception loading file in directory: " + directoryHeader.getPath() + path + "\nFile contains a non-integral value");
+            System.out.println("Exception loading file: " + absolutePath + "\nFile contains a non-integral value");
             System.exit(-1);
         }
 
@@ -79,34 +65,25 @@ public class FileLoader {
      * @throws NumberFormatException Thrown when a file contains a non-integral value
      * @throws LoaderException.UnreadablePathException Thrown when the provided path cannot be read
      */
-    private static List<Integer> loadFileContents(URL directoryHeader, String path) throws IOException, LoaderException.IntegralColorException, NumberFormatException, LoaderException.UnreadablePathException {
+    private static List<Integer> loadFileContents(String absolutePath) throws IOException, LoaderException.IntegralColorException, NumberFormatException, LoaderException.UnreadablePathException {
 
-        if (directoryHeader == null) {
-            // Do not attempt to load the file with a null directory header
-            throw new LoaderException.UnreadablePathException("null directory header");
-        }
-
-        File file = new File(directoryHeader.getPath() + path);
+        File file = new File(absolutePath);
 
         List<Integer> lineValues = new ArrayList<>();
 
-        if (file.exists()) {
+        if(file.exists()) {
 
             // Open a reader in the file
             BufferedReader reader = new BufferedReader(new FileReader(file));
 
             String line;
 
-            if (directoryHeader == COMP) {
-                // Send the first value in a compressed file to RITUncompress so it can be used as necessary
-                RITUncompress.dimension = Integer.parseInt(reader.readLine());
-            }
-
             while ((line = reader.readLine()) != null) {
                 int value = Integer.parseInt(line);
 
-                if(directoryHeader != COMP && (value < 0 || 255 < value)) {
+                if (!isFileCompressed(absolutePath) && (value < 0 || 255 < value)) {
                     // Do not check colors when loading compressed files
+
                     throw new LoaderException.IntegralColorException(value);
                 }
 
@@ -114,43 +91,21 @@ public class FileLoader {
             }
 
             reader.close();
-        } else {
-            throw new LoaderException.UnreadablePathException(file.getPath());
         }
 
         return lineValues;
     }
 
     /**
-     * Writes a two dimensional array of objects to a file specified by the provided {@link URL} directoryHeader and
-     * path.
-     *
-     * <p>This method is used to convert an array into a list of line values before attempting to write the array
-     * contents to a file.</p>
-     */
-    public static void secureWriteFileContents(int[][] pixelGrid, URL directoryHeader, String path) {
-        List<String> valueList = new ArrayList<>();
-
-        // Convert grid into list for writing
-        for (int[] row : pixelGrid) {
-            for (int value : row) {
-                valueList.add(value + "");
-            }
-        }
-
-        secureWriteFileContents(valueList, directoryHeader, path);
-    }
-
-    /**
      * Writes a list of objects to a file specified by the provided directoryHeader {@link URL} and path.
      *
-     * <p>This method is used to call {@link FileLoader#writeFileContents(List, URL, String)} with automatic attention
+     * <p>This method is used to call {@link FileLoader#writeFileContents(List, String)} with automatic attention
      * to any thrown exceptions.</p>
      */
-    public static void secureWriteFileContents(List<?> lineValues, URL directoryHeader, String path) {
+    public static void secureWriteFileContents(List<?> lineValues, String absolutePath) {
         try {
-            writeFileContents(lineValues, directoryHeader, path);
-        } catch (LoaderException.DirectoryCreationException | LoaderException.UnreadablePathException | IOException e) {
+            writeFileContents(lineValues, absolutePath);
+        } catch (LoaderException.DirectoryCreationException | IOException e) {
             // Handle nonexistent file, unreadable file, and failure to create file
             e.printStackTrace();
             System.exit(-1);
@@ -158,21 +113,15 @@ public class FileLoader {
     }
 
     /**
-     * Writes a {@link List} of objects to a file specified by the provided directoryHeader {@link URL} and path.
+     * Writes a {@link List} of objects to a file specified by the provided absolute file path.
      *
      * <p>Each object in lineValues will be written to its own line in an existent file. If the file does not exist,
      * this method will attempt to create it.</p>
      *
-     * @throws LoaderException.UnreadablePathException Thrown when the provided path cannot be read or does not exist
      * @throws LoaderException.DirectoryCreationException Thrown when a file cannot be created at the provided path
      */
-    private static void writeFileContents(List<?> lineValues, URL directoryHeader, String path) throws LoaderException.UnreadablePathException, IOException, LoaderException.DirectoryCreationException {
-        if (directoryHeader == null) {
-            // Do not attempt to load the file with a null directory header
-            throw new LoaderException.UnreadablePathException("null directory header");
-        }
-
-        File file = new File(directoryHeader.getPath() + path);
+    private static void writeFileContents(List<?> lineValues, String absolutePath) throws LoaderException.DirectoryCreationException, IOException {
+        File file = new File(absolutePath);
 
         if (!file.exists()) {
 
@@ -189,12 +138,6 @@ public class FileLoader {
 
         BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file)));
 
-        if(directoryHeader == COMP) {
-            // Write image size as first line in compressed file
-            writer.write(RITCompress.dimension + "");
-            writer.newLine();
-        }
-
         for (Object value : lineValues) {
             // Write each value to its own line in the file
             writer.write(value.toString());
@@ -202,5 +145,24 @@ public class FileLoader {
         }
 
         writer.close();
+    }
+
+
+    private static final Map<String, Boolean> compressionReference = new HashMap<>();
+
+    private static final String COMP_EXTENSION = ".rit";
+
+    private static boolean isFileCompressed(String path) {
+        if(compressionReference.containsKey(path)) {
+            return compressionReference.get(path);
+        } else {
+            if(path.contains(COMP_EXTENSION)) {
+                compressionReference.put(path, true);
+                return true;
+            } else {
+                compressionReference.put(path, false);
+                return false;
+            }
+        }
     }
 }
