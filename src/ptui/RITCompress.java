@@ -27,9 +27,9 @@ public class RITCompress {
     /**
      * Facilitates the process of compressing the file provided as an argument in the command line.
      */
-    public static void compress(String source, String destination) {
+    public static List<String> compress(String source) {
         // Read the contents of the file to be compressed (the source) and convert into a QuadTree structure
-        List<Integer> fileValues = FileLoader.secureLoadFileContents(FileLoader.UNCM_HEAD + source);
+        List<Integer> fileValues = FileLoader.secureLoadFileContents(source);
         dimension = fileValues.size();
 
         treeContents = QuadTree.fromUncompressedContents(fileValues, 0, 0, (int) Math.sqrt(dimension));
@@ -39,7 +39,7 @@ public class RITCompress {
         List<String> writeValues = new ArrayList<>(Collections.singleton("" + dimension));
         writeValues.addAll(Arrays.asList(compressed));
 
-        writeContents = writeValues;
+        return writeValues;
     }
 
     public static List<String> writeContents() {
@@ -57,10 +57,13 @@ public class RITCompress {
         } else {
             String source = args[1], destination = args[0];
             System.out.println("Compressing: " + source);
-            compress(source, destination);
+
+            List<String> writeValues = compress(FileLoader.UNCM_HEAD + source);
             System.out.println("QuadTree: " + QuadTree.preorder(treeContents()));
-            FileLoader.secureWriteFileContents(writeContents(), FileLoader.COMP_HEAD + destination);
+
+            FileLoader.secureWriteFileContents(writeValues, FileLoader.COMP_HEAD + destination);
             System.out.println("Output file: " + new File(FileLoader.COMP_HEAD + destination).getAbsolutePath());
+
             int size = (int) Math.sqrt(dimension);
             // TODO: fix below
             System.out.println("Compression: " + dimension + " -> " + (size + 1) + " (" + (100 * (size + 1) / dimension));

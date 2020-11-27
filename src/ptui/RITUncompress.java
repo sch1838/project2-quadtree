@@ -20,13 +20,13 @@ public class RITUncompress {
 
     private static RITQTNode treeContents;
 
-    public static void uncompress(String source, String destination) {
-        if(source == null || destination == null) {
+    public static List<String> uncompress(String source) {
+        if(source == null) {
             System.out.println("Failed to uncompress: null source or destination");
-            return;
+            return new ArrayList<>();
         }
 
-        List<Integer> lineValues = FileLoader.secureLoadFileContents(FileLoader.COMP_HEAD + source);
+        List<Integer> lineValues = FileLoader.secureLoadFileContents(source);
         dimension = lineValues.remove(0);
 
         // Create the quadtree structure from the compressed file
@@ -40,7 +40,7 @@ public class RITUncompress {
             }
         }
 
-        writeContents = writeValues;
+        return writeValues;
     }
 
     public static List<String> writeContents() {
@@ -61,9 +61,11 @@ public class RITUncompress {
         } else {
             String source = args[0], destination = args[1];
             System.out.println("Uncompressing: " + source);
-            uncompress(source, destination);
+
+            List<String> writeValues = uncompress(FileLoader.COMP_HEAD + source);
             System.out.println("QuadTree: " + QuadTree.preorder(treeContents()));
-            FileLoader.secureWriteFileContents(writeContents(), FileLoader.UNCM_HEAD + destination);
+
+            FileLoader.secureWriteFileContents(writeValues, FileLoader.UNCM_HEAD + destination);
             System.out.println("Output file: " + new File(FileLoader.UNCM_HEAD + destination).getAbsolutePath());
         }
     }

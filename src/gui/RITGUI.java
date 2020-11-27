@@ -25,10 +25,12 @@ public class RITGUI extends Application {
 
         // Create border pane to hold grid and label pane
 
-        borders.setTop(createMenuBar());
+        this.stage = stage;
+
+        Display.container.setTop(createMenuBar());
 
         // Create and set the scene from the top of the pane hierarchy
-        Scene mainScene = new Scene(borders);
+        Scene mainScene = new Scene(Display.container);
         stage.setScene(mainScene);
         stage.setTitle("Compresora");
         stage.show();
@@ -38,9 +40,6 @@ public class RITGUI extends Application {
     private static final FileChooser.ExtensionFilter COMPRESSED_FILTER = new FileChooser.ExtensionFilter("Compressed Image Format", "*.rit");
 
     private static final String displayFailure = "Could not display image: Unreadable or nonexistent source file";
-
-    private RITUncompress uncompressor;
-    private RITCompress compressor;
 
     private final BorderPane borders = new BorderPane();
 
@@ -52,13 +51,15 @@ public class RITGUI extends Application {
 
     private int zoom = 1;
 
+    private List<String> activeContent;
+
     private MenuBar createMenuBar() {
         Menu file = new Menu("File");
 
             Menu open = new Menu("Open...");
 
             addTooltipMenuItemToMenu(open, "New", "Open an uncompressed image file other than that at the current source path", actionEvent -> {
-                String selection = this.postFileSelectionAsPath(stage, "Open Image File", UNCOMPRESSED_FILTER);
+                String selection = this.postFileSelectionAsPath(stage, "Open Image File", false, UNCOMPRESSED_FILTER);
 
                 if (!selection.equals("")) {
                     this.sourcePath = selection;
@@ -80,9 +81,28 @@ public class RITGUI extends Application {
             });
 
             addTooltipMenuItemToMenu(file, "Save", "Save the currently loaded content to the current destination path", actionEvent -> {
+                if(!Display.validatePath(this.destinationPath)) {
+                    String selection = this.postFileSelectionAsPath(stage, "Select Destination Path", true, COMPRESSED_FILTER, UNCOMPRESSED_FILTER);
+                    if(!selection.isEmpty()) {
+                        this.destinationPath = selection;
+                    }
+                }
 
+                if(this.activeContent != null && Display.validatePaths(this.sourcePath, this.destinationPath)) {
+                    FileLoader.secureWriteFileContents(this.activeContent, this.destinationPath);
+                }
             });
-            addTooltipMenuItemToMenu(file, "Save As", "Save the currently loaded content to a different path than the current destination path", null);
+            addTooltipMenuItemToMenu(file, "Save As", "Save the currently loaded content to a different path than the current destination path", actionEvent -> {
+                if(this.activeContent != null) {
+                    String selection = this.postFileSelectionAsPath(stage, "Select Destination Path", true, COMPRESSED_FILTER, UNCOMPRESSED_FILTER);
+                    if(!selection.isEmpty()) {
+                        this.destinationPath = selection;
+                        FileLoader.secureWriteFileContents(this.activeContent, this.destinationPath);
+                    }
+                } else {
+                    showAlert(new Alert(Alert.AlertType.ERROR, "Save failed: null content"));
+                }
+            });
 
         file.getItems().addAll(open, new SeparatorMenuItem(), createSettings());
 
@@ -91,16 +111,16 @@ public class RITGUI extends Application {
             Menu path = new Menu("Path...");
 
             addTooltipMenuItemToMenu(path, "Source", "Edit the source path", actionEvent -> {
-                String selection = this.postFileSelectionAsPath(stage, "Select Source File", COMPRESSED_FILTER, UNCOMPRESSED_FILTER);
-                if (!selection.equals("")) {
+                String selection = this.postFileSelectionAsPath(stage, "Select Source File", false, COMPRESSED_FILTER, UNCOMPRESSED_FILTER);
+                if (!selection.isEmpty()) {
                     this.sourcePath = selection;
                     showAlert(new Alert(Alert.AlertType.INFORMATION, "The source path has been updated: \n" + selection));
                 }
             });
 
             addTooltipMenuItemToMenu(path, "Destination", "Edit the destination path", actionEvent -> {
-                String selection = this.postFileSelectionAsPath(stage, "Select Destination File", COMPRESSED_FILTER, UNCOMPRESSED_FILTER);
-                if (!selection.equals("")) {
+                String selection = this.postFileSelectionAsPath(stage, "Select Destination File", false, COMPRESSED_FILTER, UNCOMPRESSED_FILTER);
+                if (!selection.isEmpty()) {
                     this.destinationPath = selection;
                     showAlert(new Alert(Alert.AlertType.INFORMATION, "The destination path has been updated: \n" + selection));
                 }
@@ -109,19 +129,15 @@ public class RITGUI extends Application {
             Menu compress = new Menu("Compression...");
 
             addTooltipMenuItemToMenu(compress, "Compress", "Compress the uncompressed image file at the current source path", actionEvent -> {
-//                this.compressor = new RITCompress(this.sourcePath, this.destinationPath);
-//
-//                if(this.sourcePath != null && this.sourcePath.contains(".txt")) {
-//                    compressor.compress();
-//                }
+                if(Display.validatePath(this.sourcePath)) {
+                    this.activeContent = RITCompress.compress(this.sourcePath);
+                }
             });
 
             addTooltipMenuItemToMenu(compress, "Uncompress", "Uncompress the compressed image file at the current source path", actionEvent -> {
-//                this.uncompressor = new RITUncompress(this.sourcePath, this.destinationPath);
-//
-//                if(this.sourcePath != null && this.sourcePath.contains(".rit")) {
-//                    uncompressor.uncompress();
-//                }
+                if(Display.validatePath(this.sourcePath)) {
+                    this.activeContent = RITUncompress.uncompress(this.sourcePath);
+                }
             });
 
         edit.getItems().addAll(path, compress);
@@ -168,12 +184,12 @@ public class RITGUI extends Application {
         return settings;
     }
 
-    private String postFileSelectionAsPath(Stage stage, String title, FileChooser.ExtensionFilter... filters) {
+    private String postFileSelectionAsPath(Stage stage, String title, boolean save, FileChooser.ExtensionFilter... filters) {
         this.fileChooser.setTitle(title);
         this.fileChooser.getExtensionFilters().clear();
         this.fileChooser.getExtensionFilters().addAll(filters);
 
-        File file = this.fileChooser.showOpenDialog(stage);
+        File file = save ? this.fileChooser.showSaveDialog(stage) : this.fileChooser.showOpenDialog(stage);
 
         if (file != null) {
             return file.getPath();
