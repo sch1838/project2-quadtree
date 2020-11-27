@@ -109,19 +109,19 @@ public class RITGUI extends Application {
             Menu compress = new Menu("Compression...");
 
             addTooltipMenuItemToMenu(compress, "Compress", "Compress the uncompressed image file at the current source path", actionEvent -> {
-                this.compressor = new RITCompress(this.sourcePath, this.destinationPath);
-
-                if(this.sourcePath != null && this.sourcePath.contains(".txt")) {
-                    compressor.compress();
-                }
+//                this.compressor = new RITCompress(this.sourcePath, this.destinationPath);
+//
+//                if(this.sourcePath != null && this.sourcePath.contains(".txt")) {
+//                    compressor.compress();
+//                }
             });
 
             addTooltipMenuItemToMenu(compress, "Uncompress", "Uncompress the compressed image file at the current source path", actionEvent -> {
-                this.uncompressor = new RITUncompress(this.sourcePath, this.destinationPath);
-
-                if(this.sourcePath != null && this.sourcePath.contains(".rit")) {
-                    uncompressor.uncompress();
-                }
+//                this.uncompressor = new RITUncompress(this.sourcePath, this.destinationPath);
+//
+//                if(this.sourcePath != null && this.sourcePath.contains(".rit")) {
+//                    uncompressor.uncompress();
+//                }
             });
 
         edit.getItems().addAll(path, compress);

@@ -18,18 +18,16 @@ import java.util.List;
  */
 public class RITCompress {
 
-    private String source, destination;
+    private static int dimension;
 
-    private int dimension;
+    private static List<String> writeContents;
 
-    private List<String> writeContents;
-
-    private RITQTNode treeContents;
+    private static RITQTNode treeContents;
 
     /**
      * Facilitates the process of compressing the file provided as an argument in the command line.
      */
-    public void compress() {
+    public static void compress(String source, String destination) {
         // Read the contents of the file to be compressed (the source) and convert into a QuadTree structure
         List<Integer> fileValues = FileLoader.secureLoadFileContents(FileLoader.UNCM_HEAD + source);
         dimension = fileValues.size();
@@ -41,39 +39,31 @@ public class RITCompress {
         List<String> writeValues = new ArrayList<>(Collections.singleton("" + dimension));
         writeValues.addAll(Arrays.asList(compressed));
 
-        this.writeContents = writeValues;
+        writeContents = writeValues;
     }
 
-    public RITCompress(String source, String destination) {
-        this.source = source; this.destination = destination;
+    public static List<String> writeContents() {
+        return writeContents;
     }
 
-    public List<String> listContents() {
-        return this.writeContents;
-    }
-
-    public RITQTNode treeContents() {
-        return this.treeContents;
-    }
-
-    public String destination() {
-        return this.destination;
+    public static RITQTNode treeContents() {
+        return treeContents;
     }
 
     public static void main(String[] args) {
         if (args.length != 2) {
             // Handle missing or invalid argument(s)
-            System.out.println("Usage: java RITUncompress compressed.rit uncompressed.txt");
+            System.out.println("Usage: java RITCompress compressed.rit uncompressed.txt");
         } else {
-            RITCompress compress = new RITCompress(args[1], args[0]);
-            System.out.println("Compressing: " + compress.source);
-            compress.compress();
-            System.out.println("QuadTree: " + QuadTree.preorder(compress.treeContents()));
-            FileLoader.secureWriteFileContents(compress.listContents(), FileLoader.COMP_HEAD + compress.destination());
-            System.out.println("Output file: " + new File(FileLoader.COMP_HEAD + compress.destination()).getAbsolutePath());
-            int size = (int) Math.sqrt(compress.dimension);
+            String source = args[1], destination = args[0];
+            System.out.println("Compressing: " + source);
+            compress(source, destination);
+            System.out.println("QuadTree: " + QuadTree.preorder(treeContents()));
+            FileLoader.secureWriteFileContents(writeContents(), FileLoader.COMP_HEAD + destination);
+            System.out.println("Output file: " + new File(FileLoader.COMP_HEAD + destination).getAbsolutePath());
+            int size = (int) Math.sqrt(dimension);
             // TODO: fix below
-            System.out.println("Compression: " + compress.dimension + " -> " + (size + 1) + " (" + (100 * (size + 1) / compress.dimension));
+            System.out.println("Compression: " + dimension + " -> " + (size + 1) + " (" + (100 * (size + 1) / dimension));
         }
     }
 }

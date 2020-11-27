@@ -16,14 +16,12 @@ import java.util.List;
  */
 public class RITUncompress {
 
-    private String source, destination;
+    private static List<String> writeContents;
 
-    private List<String> writeContents;
+    private static RITQTNode treeContents;
 
-    private RITQTNode treeContents;
-
-    public void uncompress() {
-        if(this.source == null || this.destination == null) {
+    public static void uncompress(String source, String destination) {
+        if(source == null || destination == null) {
             System.out.println("Failed to uncompress: null source or destination");
             return;
         }
@@ -42,31 +40,15 @@ public class RITUncompress {
             }
         }
 
-        this.writeContents = writeValues;
+        writeContents = writeValues;
     }
 
-    public List<String> listContents() {
-        return this.writeContents;
+    public static List<String> writeContents() {
+        return writeContents;
     }
 
-    public RITQTNode treeContents() {
-        return this.treeContents;
-    }
-
-    public RITUncompress(String source, String destination) {
-        this.source = source; this.destination = destination;
-    }
-
-    public void modifySource(String path) {
-        this.source = path;
-    }
-
-    public void modifyDestination(String path) {
-        this.destination = path;
-    }
-
-    public String destination() {
-        return this.destination;
+    public static RITQTNode treeContents() {
+        return treeContents;
     }
 
     /** The dimension of the image to uncompress. **/
@@ -77,12 +59,12 @@ public class RITUncompress {
             // Handle missing or invalid argument(s)
             System.out.println("Usage: java RITUncompress compressed.rit uncompressed.txt");
         } else {
-            RITUncompress uncompress = new RITUncompress(args[0], args[1]);
-            System.out.println("Uncompressing: " + uncompress.source);
-            uncompress.uncompress();
-            System.out.println("QuadTree: " + QuadTree.preorder(uncompress.treeContents()));
-            FileLoader.secureWriteFileContents(uncompress.listContents(), FileLoader.UNCM_HEAD + uncompress.destination());
-            System.out.println("Output file: " + new File(FileLoader.UNCM_HEAD + uncompress.destination()).getAbsolutePath());
+            String source = args[0], destination = args[1];
+            System.out.println("Uncompressing: " + source);
+            uncompress(source, destination);
+            System.out.println("QuadTree: " + QuadTree.preorder(treeContents()));
+            FileLoader.secureWriteFileContents(writeContents(), FileLoader.UNCM_HEAD + destination);
+            System.out.println("Output file: " + new File(FileLoader.UNCM_HEAD + destination).getAbsolutePath());
         }
     }
 }
