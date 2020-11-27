@@ -1,5 +1,6 @@
 package gui;
 
+import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
@@ -17,19 +18,36 @@ import java.io.File;
 import java.util.List;
 import java.util.function.Consumer;
 
+/**
+ * The Display Class holds all visual content to be used by the {@link RITGUI} application. Access to its components is
+ * limited because they are largely specific to the RITGUI application.
+ *
+ * @author Samuel Henderson
+ */
 public class Display {
 
     //<editor-fold desc="File Selection Utility">
     private static final FileChooser FILE_CHOOSER = new FileChooser();
 
+    // Filters for file selection
     private static final FileChooser.ExtensionFilter UNCOMPRESSED_FILTER = new FileChooser.ExtensionFilter("Uncompressed Image Format", "*.txt");
     private static final FileChooser.ExtensionFilter COMPRESSED_FILTER = new FileChooser.ExtensionFilter("Compressed Image Format", "*.rit");
 
+    /**
+     * Opens a file selection window with the provided title.
+     *
+     * @param stage The stage upon which the file selector will appear
+     * @param save Whether a save dialog will be opened
+     * @param pathApplicator The consumer that will use the path of the selected file
+     * @param filters Any {@link javafx.stage.FileChooser.ExtensionFilter} instances that should be applied
+     */
     private static void postFileSelection(Stage stage, String title, boolean save, Consumer<String> pathApplicator, FileChooser.ExtensionFilter... filters) {
+        // Update title and apply extension filters
         FILE_CHOOSER.setTitle(title);
         FILE_CHOOSER.getExtensionFilters().clear();
         FILE_CHOOSER.getExtensionFilters().addAll(filters);
 
+        // Access the file
         File file = save ? FILE_CHOOSER.showSaveDialog(stage) : FILE_CHOOSER.showOpenDialog(stage);
 
         if (file != null) {
@@ -40,11 +58,21 @@ public class Display {
         }
     }
 
+    /**
+     * Performs a save-as operation on the provided {@link Stage}.
+     * The user is prompted to select a save location to be used in {@link Display#saveContentToDestination()}.
+     */
     private static void saveContentAs(Stage stage) {
         postFileSelection(stage, "Save As", true, destinationPathField::setText, activeMode == Mode.UNCOMPRESS ? UNCOMPRESSED_FILTER : COMPRESSED_FILTER);
         saveContentToDestination();
     }
 
+    /**
+     * Performs a save operation.
+     *
+     * <p>If a destination has been selected and the active contents are existent, the active contents will be written
+     * to the destination file using {@link FileLoader#secureWriteFileContents(List, String)}.</p>
+     */
     private static void saveContentToDestination() {
         if(!destinationPathField.getText().isEmpty() && !destinationPathField.getText().equals(NO_PATH)) {
             if(activeContents != null) {
@@ -59,23 +87,36 @@ public class Display {
     //</editor-fold>
 
     //<editor-fold desc="Logical Data">
+    /** The list of active contents that is updated by some operations. **/
     private static List<String> activeContents;
+
+    /** The default operation mode is DISPLAY. **/
     private static Mode activeMode = Mode.DISPLAY;
+
+    /** The default zoom value is 1. **/
     private static int zoom = 1;
 
+    /** The root container of all gui elements. **/
     private static final BorderPane container = new BorderPane();
 
-    public static BorderPane container() {
+    /**
+     * Provides {@link Display#container} to be used in {@link RITGUI}.
+     */
+    protected static BorderPane container() {
         return container;
     }
 
-    private static void clearData() {
+    /**
+     * Resets all logical data to their default values.
+     */
+    private static void resetData() {
         if(activeContents != null) {
             activeContents = null;
         }
         changeMode(Mode.DISPLAY);
         zoom = 1;
 
+        // Clear any displayed images
         container.setCenter(null);
 
         postOut("Reset program data");
@@ -83,9 +124,14 @@ public class Display {
     //</editor-fold>
 
     //<editor-fold desc="Button Display Arrangement">
-    public static GridPane createButtonDisplay(Stage stage) {
+
+    /**
+     * Organizes the main button display for the GUI. This includes all of the functional components of the application.
+     */
+    private static GridPane createButtonDisplay(Stage stage) {
         GridPane view = new GridPane();
 
+        // Setup display for path selection
         GridPane pathDisplay = new GridPane();
             pathDisplay.setHgap(10);
             pathDisplay.setVgap(12);
@@ -98,6 +144,7 @@ public class Display {
             pathDisplay.add(sourceSelect, 2, 0);
             pathDisplay.add(destinationSelect, 2, 1);
 
+        // Setup display for operations/actions
         GridPane actionPane = new GridPane();
             actionPane.add(modeSelect, 0, 0);
             actionPane.add(currentMode, 0, 1);
@@ -130,22 +177,34 @@ public class Display {
     //</editor-fold>
 
     //<editor-fold desc="Path Selection and General Initialization">
+    /** Container for the separate destination selection options. **/
     private static final MenuButton destinationSelect = new MenuButton("Select Path");
+
+    /** Source path selection. **/
     private static final Button sourceSelect = new Button("Select Path");
 
+    /** Destination selection options: newFile will create a new file, existingFile will modify an existing file. **/
     private static final MenuItem
         newFile = new MenuItem("New File"),
         existingFile = new MenuItem("Existing File")
     ;
 
+    /** Constant reference value for the nonexistence of a path in either path field. **/
     private static final String NO_PATH = "No path selected";
 
+    /** The two path fields for the source and destination paths. **/
     private static final TextField
         sourcePathField = new TextField(NO_PATH),
         destinationPathField = new TextField(NO_PATH)
     ;
 
-    public static void initializePathSelection(Stage stage) {
+    /**
+     * The main initializer for the Display. This should be called from an {@link Application} that provides its main
+     * {@link Stage}.
+     *
+     * <p>This method is responsible for initializing any fields that require a stage reference.</p>
+     */
+    protected static void initializePathSelection(Stage stage) {
         // Actions for selecting the destination file
         newFile.setOnAction(actionEvent -> postFileSelection(stage, "Destination As", true, destinationPathField::setText, activeMode == Mode.UNCOMPRESS ? UNCOMPRESSED_FILTER : COMPRESSED_FILTER));
         existingFile.setOnAction(actionEvent -> postFileSelection(stage, "Select Destination File", false, destinationPathField::setText, activeMode == Mode.UNCOMPRESS ? UNCOMPRESSED_FILTER : COMPRESSED_FILTER));
@@ -168,6 +227,7 @@ public class Display {
         container.setBottom(output);
 
         save.setOnAction(actionEvent -> {
+            // Save-as if nonexistent destination
             if(destinationPathField.getText().equals(NO_PATH)) {
                 saveContentAs(stage);
             } else {
@@ -259,7 +319,7 @@ public class Display {
             }
         });
 
-        reset.setOnAction(actionEvent -> clearData());
+        reset.setOnAction(actionEvent -> resetData());
 
         configureButtons(run, save, saveAs, swap, reset);
 
@@ -287,17 +347,25 @@ public class Display {
     }
     //</editor-fold>
 
+    /** The program output text area. **/
     private static final TextArea output = new TextArea();
 
     static {
+        // The output area should not be modifiable but should wrap text
         output.setWrapText(true);
         output.setEditable(false);
     }
 
+    /**
+     * Posts a message to {@link Display#output}.
+     */
     public static void postOut(String message) {
         output.setText(output.getText() + "\n" + message);
     }
 
+    /**
+     * Posts an exception message as an alert and to {@link Display#output}.
+     */
     public static void postException(String message) {
         postOut(message);
         Alert alert = new Alert(Alert.AlertType.ERROR);
@@ -306,6 +374,9 @@ public class Display {
         alert.showAndWait();
     }
 
+    /**
+     * The Mode enum enumerates the three possible modes for the application.
+     */
     enum Mode {
         COMPRESS, UNCOMPRESS, DISPLAY
     }

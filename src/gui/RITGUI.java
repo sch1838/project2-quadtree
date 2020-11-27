@@ -4,8 +4,15 @@ import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
+/**
+ * The RITGUI class is an {@link Application} that facilitates the display, compression, and uncompression of certain
+ * image file formats. All visual content is managed in {@link Display}.
+ *
+ * @author Samuel Henderson
+ */
 public class RITGUI extends Application {
 
+    /** This is only true when the RITGUI Application has been launched. **/
     public static boolean active = false;
 
     @Override
