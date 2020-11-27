@@ -21,42 +21,39 @@ public class Display {
     //<editor-fold desc="File Selection Utility">
     private static final FileChooser FILE_CHOOSER = new FileChooser();
 
-    public static boolean validatePaths(String source, String destination) {
-        return source != null && destination != null && !source.isEmpty() && !destination.isEmpty();
-    }
+    private static final FileChooser.ExtensionFilter UNCOMPRESSED_FILTER = new FileChooser.ExtensionFilter("Uncompressed Image Format", "*.txt");
+    private static final FileChooser.ExtensionFilter COMPRESSED_FILTER = new FileChooser.ExtensionFilter("Compressed Image Format", "*.rit");
 
-    public static boolean validatePath(String path) {
-        return path != null && !path.isEmpty();
-    }
-
-    public static void postFileSelection(Stage stage, String title, boolean save, Consumer<String> pathApplicator, FileChooser.ExtensionFilter... filters) {
+    private static void postFileSelection(Stage stage, String title, boolean save, Consumer<String> pathApplicator, FileChooser.ExtensionFilter... filters) {
         FILE_CHOOSER.setTitle(title);
         FILE_CHOOSER.getExtensionFilters().clear();
-
-        if (filters.length == 0) {
-            FILE_CHOOSER.getExtensionFilters().add(Constants.BOTH_FILTERS);
-        } else {
-            FILE_CHOOSER.getExtensionFilters().addAll(filters);
-        }
+        FILE_CHOOSER.getExtensionFilters().addAll(filters);
 
         File file = save ? FILE_CHOOSER.showSaveDialog(stage) : FILE_CHOOSER.showOpenDialog(stage);
 
         if (file != null) {
             pathApplicator.accept(file.getPath());
+            postOut("Applied new path: " + file.getPath());
+        } else {
+            postOut("Failed to apply path, invalid file");
         }
     }
 
     private static void saveContentAs(Stage stage) {
-        postFileSelection(stage, "Save As", true, destinationPathField::setText);
+        postFileSelection(stage, "Save As", true, destinationPathField::setText, activeMode == Mode.UNCOMPRESS ? UNCOMPRESSED_FILTER : COMPRESSED_FILTER);
         saveContentToDestination();
     }
 
     private static void saveContentToDestination() {
-        if(!destinationPathField.getText().isEmpty() && !destinationPathField.getText().equals(Constants.NO_PATH)) {
+        if(!destinationPathField.getText().isEmpty() && !destinationPathField.getText().equals(NO_PATH)) {
             if(activeContents != null) {
                 FileLoader.secureWriteFileContents(activeContents, destinationPathField.getText());
+                postOut("Saved active contents to: " + destinationPathField.getText());
+                return;
             }
         }
+
+        postOut("Save failed: Empty contents or destination");
     }
     //</editor-fold>
 
@@ -69,6 +66,18 @@ public class Display {
 
     public static BorderPane container() {
         return container;
+    }
+
+    private static void clearData() {
+        if(activeContents != null) {
+            activeContents = null;
+        }
+        changeMode(Mode.DISPLAY);
+        zoom = 1;
+
+        container.setCenter(null);
+
+        postOut("Reset program data");
     }
     //</editor-fold>
 
@@ -94,6 +103,8 @@ public class Display {
             actionPane.add(run, 1, 0);
             actionPane.add(save, 2, 0);
             actionPane.add(saveAs, 3, 0);
+            actionPane.add(swap, 4, 0);
+            actionPane.add(reset, 5, 0);
 
             actionPane.setHgap(10);
             actionPane.setVgap(12);
@@ -126,28 +137,44 @@ public class Display {
         existingFile = new MenuItem("Existing File")
     ;
 
-    public static final TextField
-        sourcePathField = new TextField(Constants.NO_PATH),
-        destinationPathField = new TextField(Constants.NO_PATH)
+    private static final String NO_PATH = "No path selected";
+
+    private static final TextField
+        sourcePathField = new TextField(NO_PATH),
+        destinationPathField = new TextField(NO_PATH)
     ;
 
     public static void initializePathSelection(Stage stage) {
-        newFile.setOnAction(actionEvent -> postFileSelection(stage, "Destination As", true, destinationPathField::setText));
-        existingFile.setOnAction(actionEvent -> postFileSelection(stage, "Select Destination File", false, destinationPathField::setText));
+        // Actions for selecting the destination file
+        newFile.setOnAction(actionEvent -> postFileSelection(stage, "Destination As", true, destinationPathField::setText, activeMode == Mode.UNCOMPRESS ? UNCOMPRESSED_FILTER : COMPRESSED_FILTER));
+        existingFile.setOnAction(actionEvent -> postFileSelection(stage, "Select Destination File", false, destinationPathField::setText, activeMode == Mode.UNCOMPRESS ? UNCOMPRESSED_FILTER : COMPRESSED_FILTER));
 
-        sourceSelect.setOnAction(actionEvent -> postFileSelection(stage, "Select Source File", false, sourcePathField::setText));
+        // Action and configuration for selecting the source file
+        sourceSelect.setOnAction(actionEvent -> postFileSelection(stage, "Select Source File", false, sourcePathField::setText, activeMode == Mode.UNCOMPRESS ? COMPRESSED_FILTER : UNCOMPRESSED_FILTER));
         sourceSelect.setMaxWidth(Double.MAX_VALUE);
 
         destinationSelect.getItems().addAll(newFile, existingFile);
 
+        // Ensure components use all available space
         GridPane.setHgrow(sourceSelect, Priority.SOMETIMES);
         GridPane.setHgrow(sourcePathField, Priority.ALWAYS);
         GridPane.setHgrow(destinationPathField, Priority.ALWAYS);
 
+        // Populate main container
         container.setTop(createButtonDisplay(stage));
-
         container.setCenter(new Rectangle(1024, 384));
         Platform.runLater(() -> container.setCenter(null));
+        container.setBottom(output);
+
+        save.setOnAction(actionEvent -> {
+            if(destinationPathField.getText().equals(NO_PATH)) {
+                saveContentAs(stage);
+            } else {
+                saveContentToDestination();
+            }
+        });
+
+        saveAs.setOnAction(actionEvent -> saveContentAs(stage));
     }
     //</editor-fold>
 
@@ -167,16 +194,14 @@ public class Display {
         // Initialize action buttons
         run = new Button("Run"),
         save = new Button("Save"),
-        saveAs = new Button("Save As")
+        saveAs = new Button("Save As"),
+        swap = new Button("Swap Paths"),
+        reset = new Button("Reset")
     ;
 
     static {
         // Initialize default state of actionPane components
         displayImage.setSelected(true);
-        run.setMaxWidth(Double.MAX_VALUE);
-        save.setMaxWidth(Double.MAX_VALUE);
-        saveAs.setMaxWidth(Double.MAX_VALUE);
-        currentMode.setMaxWidth(Double.MAX_VALUE);
 
         // Attach actions to buttons
         displayImage.setOnAction(actionEvent -> changeMode(Mode.DISPLAY));
@@ -186,25 +211,60 @@ public class Display {
         run.setOnAction(actionEvent -> {
             String sourcePath = sourcePathField.getText();
 
-            if (!sourcePath.equals(Constants.NO_PATH)) {
+            if (!sourcePath.equals(NO_PATH)) {
                 if (activeMode == Mode.DISPLAY) {
-                    container.setCenter(RITViewer.fillCanvas(FileLoader.secureLoadFileContents(sourcePath), zoom));
-                } else if (activeMode == Mode.COMPRESS && sourcePath.contains(".txt")) {
-                    activeContents = RITCompress.compress(sourcePath);
-                } else if (activeMode == Mode.UNCOMPRESS && sourcePath.contains(".rit")) {
-                    activeContents = RITUncompress.uncompress(sourcePath);
+                    if (sourcePath.contains(".txt")) {
+                        container.setCenter(RITViewer.fillCanvas(FileLoader.secureLoadFileContents(sourcePath), zoom));
+                        postOut("Displayed uncompressed image at: " + sourcePath);
+                    } else {
+                        postOut("Display failed: Invalid source format");
+                    }
+                } else if (activeMode == Mode.COMPRESS) {
+                    if (sourcePath.contains(".txt")) {
+                        activeContents = RITCompress.compress(sourcePath);
+                        postOut("Compressed file at: " + sourcePath);
+                    } else {
+                        postOut("Compress failed: Source file is not uncompressed");
+                    }
+                } else if (activeMode == Mode.UNCOMPRESS) {
+                    if (sourcePath.contains(".rit")) {
+                        activeContents = RITUncompress.uncompress(sourcePath);
+                        postOut("Uncompressed file at: " + sourcePath);
+                    } else {
+                        postOut("Uncompress failed: Source file is not compressed");
+                    }
                 }
             }
         });
 
-        // Ensure that action buttons will use all available space in a GridPane
-        GridPane.setHgrow(run, Priority.ALWAYS);
-        GridPane.setHgrow(save, Priority.ALWAYS);
-        GridPane.setHgrow(saveAs, Priority.ALWAYS);
+        swap.setOnAction(actionEvent -> {
+            String tempPath = sourcePathField.getText();
+            sourcePathField.setText(destinationPathField.getText());
+            destinationPathField.setText(tempPath);
+
+            if (activeMode == Mode.UNCOMPRESS) {
+                changeMode(Mode.COMPRESS);
+            } else {
+                changeMode(Mode.UNCOMPRESS);
+            }
+        });
+
+        reset.setOnAction(actionEvent -> clearData());
+
+        configureButtons(run, save, saveAs, swap, reset);
 
         // Set up modeSelect
         modeSelect.getItems().addAll(displayImage, compressSource, uncompressSource);
         modeSelect.setMaxWidth(Double.MAX_VALUE);
+
+        currentMode.setEditable(false);
+    }
+
+    private static void configureButtons(Button... buttons) {
+        for (Button button : buttons) {
+            button.setMaxWidth(Double.MAX_VALUE);
+            GridPane.setHgrow(button, Priority.ALWAYS);
+        }
     }
 
     private static void changeMode(Mode mode) {
@@ -213,16 +273,19 @@ public class Display {
         uncompressSource.setSelected(mode == Mode.UNCOMPRESS);
         activeMode = mode;
         currentMode.setText(mode.name());
+        postOut("Changed operation mode to: " + mode.name());
     }
     //</editor-fold>
 
-    public static class Constants {
-        public static final String NO_PATH = "No path selected";
+    private static final TextArea output = new TextArea();
 
-        public static final FileChooser.ExtensionFilter UNCOMPRESSED_FILTER = new FileChooser.ExtensionFilter("Uncompressed Image Format", "*.txt");
-        public static final FileChooser.ExtensionFilter COMPRESSED_FILTER = new FileChooser.ExtensionFilter("Compressed Image Format", "*.rit");
+    static {
+        output.setWrapText(true);
+        output.setEditable(false);
+    }
 
-        public static final FileChooser.ExtensionFilter BOTH_FILTERS = new FileChooser.ExtensionFilter("Image Format", "*.rit", "*.txt");
+    public static void postOut(String message) {
+        output.setText(output.getText() + "\n" + message);
     }
 
     enum Mode {
