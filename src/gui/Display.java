@@ -214,8 +214,11 @@ public class Display {
             if (!sourcePath.equals(NO_PATH)) {
                 if (activeMode == Mode.DISPLAY) {
                     if (sourcePath.contains(".txt")) {
-                        container.setCenter(RITViewer.fillCanvas(FileLoader.secureLoadFileContents(sourcePath), zoom));
-                        postOut("Displayed uncompressed image at: " + sourcePath);
+                        List<Integer> content = FileLoader.secureLoadFileContents(sourcePath);
+                        if(!content.isEmpty()) {
+                            container.setCenter(RITViewer.fillCanvas(content, zoom));
+                            postOut("Displayed uncompressed image at: " + sourcePath);
+                        }
                     } else {
                         postOut("Display failed: Invalid source format");
                     }
@@ -286,6 +289,14 @@ public class Display {
 
     public static void postOut(String message) {
         output.setText(output.getText() + "\n" + message);
+    }
+
+    public static void postException(String message) {
+        postOut(message);
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setHeaderText("The process encountered a fatal exception.");
+        alert.setContentText(message);
+        alert.showAndWait();
     }
 
     enum Mode {

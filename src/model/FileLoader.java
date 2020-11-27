@@ -1,6 +1,7 @@
 package model;
 
 import gui.Display;
+import gui.RITGUI;
 
 import java.io.*;
 import java.net.URL;
@@ -34,25 +35,31 @@ public class FileLoader {
             // Handle nonexistent file
 
             f.printStackTrace();
-            Display.postOut(f.getMessage());
+            Display.postException(f.getMessage());
             System.out.println("File does not exist: " + absolutePath);
-            System.exit(-1);
+            if(!RITGUI.active) {
+                System.exit(-1);
+            }
         } catch (IOException | LoaderException.IntegralColorException | LoaderException.UnreadablePathException | LoaderException.FileDimensionException e) {
             // Handle generic IOException, unreadable files, nonsquare files, and color value not in valid range
             // All LoaderException extensions can be handled in the same way because they override printStackTrace
 
             e.printStackTrace();
-            Display.postOut(e.getMessage());
-            System.exit(-1);
+            Display.postException(e.getMessage());
+            if(!RITGUI.active) {
+                System.exit(-1);
+            }
         } catch (NumberFormatException n) {
             // Handle non-integral color values (NumberFormatException thrown when parsing lines as an integer)
             // If UNCM is null, this clause will not be reached - a null UNCM case is thrown as an
             // UnreadablePathException during the loadFileContents call that occurs in the try clause and is handled
             // before this one
 
-            Display.postOut(n.getMessage());
+            Display.postException(n.getMessage());
             System.out.println("Exception loading file: " + absolutePath + "\nFile contains a non-integral value");
-            System.exit(-1);
+            if(!RITGUI.active) {
+                System.exit(-1);
+            }
         }
 
         // An empty list is returned if an exception is caught
@@ -114,9 +121,11 @@ public class FileLoader {
             writeFileContents(lineValues, absolutePath);
         } catch (LoaderException.DirectoryCreationException | IOException e) {
             // Handle nonexistent file, unreadable file, and failure to create file
-            Display.postOut(e.getMessage());
+            Display.postException(e.getMessage());
             e.printStackTrace();
-            System.exit(-1);
+            if(!RITGUI.active) {
+                System.exit(-1);
+            }
         }
     }
 

@@ -6,6 +6,8 @@ import javafx.stage.Stage;
 
 public class RITGUI extends Application {
 
+    public static boolean active = false;
+
     @Override
     public void start(Stage stage) throws Exception {
 
@@ -15,6 +17,7 @@ public class RITGUI extends Application {
         Scene mainScene = new Scene(Display.container());
         stage.setScene(mainScene);
         stage.setTitle("Compresora");
+        active = true;
         stage.show();
     }
 
