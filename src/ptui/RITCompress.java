@@ -18,8 +18,10 @@ import java.util.List;
  */
 public class RITCompress {
 
-    private static int dimension;
+    /** The size of the uncompressed file. **/
+    private static int uncompressedSize;
 
+    /** The uncompressed file contents parsed into a QuadTree. **/
     private static RITQTNode treeContents;
 
     /**
@@ -28,24 +30,26 @@ public class RITCompress {
     public static List<String> compress(String source) {
         // Read the contents of the file to be compressed (the source) and convert into a QuadTree structure
         List<Integer> fileValues = FileLoader.secureLoadFileContents(source);
-        dimension = fileValues.size();
+        uncompressedSize = fileValues.size();
 
-        treeContents = QuadTree.fromUncompressedContents(fileValues, 0, 0, (int) Math.sqrt(dimension));
+        treeContents = QuadTree.fromUncompressedContents(fileValues, 0, 0, (int) Math.sqrt(uncompressedSize));
         String preorder = QuadTree.preorder(treeContents);
         String[] compressed = preorder.split(" ");
 
-        List<String> writeValues = new ArrayList<>(Collections.singleton("" + dimension));
+        List<String> writeValues = new ArrayList<>(Collections.singleton("" + uncompressedSize));
         writeValues.addAll(Arrays.asList(compressed));
 
         return writeValues;
     }
 
+    /** Access treeContents. **/
     public static RITQTNode treeContents() {
         return treeContents;
     }
 
-    public static int dimension() {
-        return dimension;
+    /** Access uncompressedSize. **/
+    public static int uncompressedSize() {
+        return uncompressedSize;
     }
 
     public static void main(String[] args) {
@@ -56,13 +60,16 @@ public class RITCompress {
             String source = args[1], destination = args[0];
             System.out.println("Compressing: " + source);
 
+            // Perform compression
             List<String> writeValues = compress(FileLoader.UNCM_HEAD + source);
             System.out.println("QuadTree: " + QuadTree.preorder(treeContents()));
 
+            // Write compressed data to the output file
             FileLoader.secureWriteFileContents(writeValues, FileLoader.COMP_HEAD + destination);
             System.out.println("Output file: " + new File(FileLoader.COMP_HEAD + destination).getAbsolutePath());
 
-            double uncm = RITCompress.dimension(), comp = writeValues.size();
+            // Print compression information
+            double uncm = RITCompress.uncompressedSize(), comp = writeValues.size();
             System.out.println("Uncompressed image size: " + uncm);
             System.out.println("Compressed image size: " + comp);
             System.out.println("Compression: " + (uncm - comp) / uncm * 100.0D + "%");

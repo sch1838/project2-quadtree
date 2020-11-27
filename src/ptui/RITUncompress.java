@@ -16,8 +16,14 @@ import java.util.List;
  */
 public class RITUncompress {
 
+    /** The contents of the compressed file as a QuadTree. **/
     private static RITQTNode treeContents;
 
+    /**
+     * Attempts to uncompress the file at the provided source path.
+     *
+     * @return A list of Strings representing the uncompressed content of the source file
+     */
     public static List<String> uncompress(String source) {
         if(source == null) {
             System.out.println("Failed to uncompress: null source or destination");
@@ -41,6 +47,7 @@ public class RITUncompress {
         return writeValues;
     }
 
+    /** Access treeContents **/
     public static RITQTNode treeContents() {
         return treeContents;
     }
@@ -56,9 +63,11 @@ public class RITUncompress {
             String source = args[0], destination = args[1];
             System.out.println("Uncompressing: " + source);
 
+            // Uncompress file
             List<String> writeValues = uncompress(FileLoader.COMP_HEAD + source);
             System.out.println("QuadTree: " + QuadTree.preorder(treeContents()));
 
+            // Write uncompressed content to output file
             FileLoader.secureWriteFileContents(writeValues, FileLoader.UNCM_HEAD + destination);
             System.out.println("Output file: " + new File(FileLoader.UNCM_HEAD + destination).getAbsolutePath());
         }

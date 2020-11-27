@@ -27,14 +27,20 @@ public class RITViewer extends Application {
         stage.show();
     }
 
+    /**
+     * Fills a {@link Canvas} with a list of integral values representing pixel colors [0, 255].
+
+     * @param zoom The size of each pixel will be multiplied by this value
+     */
     public static Canvas fillCanvas(List<Integer> lineValues, int zoom) {
         // Acquire dimension and create canvas
         int dimension = (int) Math.sqrt(lineValues.size());
+
+        // No negative zoom please
+        zoom = Math.max(1, zoom);
         Canvas canvas = new Canvas(dimension * zoom, dimension * zoom);
 
         GraphicsContext context = canvas.getGraphicsContext2D();
-
-        zoom = Math.max(1, zoom);
 
         // Fill all of the pixels
         for (int row = 0; row < dimension; ++ row) {

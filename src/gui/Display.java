@@ -228,7 +228,7 @@ public class Display {
                         activeContents = RITCompress.compress(sourcePath);
                         postOut("Compressed file at: " + sourcePath);
                         postOut("QuadTree: " + QuadTree.preorder(RITCompress.treeContents()));
-                        double uncm = RITCompress.dimension(), comp = activeContents.size();
+                        double uncm = RITCompress.uncompressedSize(), comp = activeContents.size();
                         postOut("Uncompressed image size: " + uncm);
                         postOut("Compressed image size: " + comp);
                         postOut("Compression: " + (uncm - comp) / uncm * 100.0D + "%");
