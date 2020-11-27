@@ -19,9 +19,15 @@ import java.util.List;
  */
 public class RITViewer extends Application {
 
+    private static List<Integer> lineValues;
+
+    public static List<Integer> lineValues() {
+        return lineValues;
+    }
+
     @Override
     public void start(Stage stage) throws Exception {
-        List<Integer> lineValues = FileLoader.secureLoadFileContents(FileLoader.UNCM_HEAD + path);
+        lineValues = FileLoader.secureLoadFileContents(FileLoader.UNCM_HEAD + path);
 
         stage.setScene(new Scene(new Group(fillCanvas(lineValues, 1))));
         stage.show();
