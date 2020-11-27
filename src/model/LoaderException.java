@@ -9,12 +9,25 @@ public class LoaderException extends Exception {
 
     protected double value;
 
-    protected LoaderException(double value) {
+    protected String message;
+
+    protected LoaderException(double value, String message) {
+        this(message);
         this.value = value;
     }
 
-    protected LoaderException() {
+    protected LoaderException(String message) {
+        this.message = message;
+    }
 
+    @Override
+    public void printStackTrace() {
+        System.out.println(this.message);
+    }
+
+    @Override
+    public String getMessage() {
+        return this.message;
     }
 
     /**
@@ -23,12 +36,7 @@ public class LoaderException extends Exception {
     public static class IntegralColorException extends LoaderException {
 
         public IntegralColorException(double value) {
-            super(value);
-        }
-
-        @Override
-        public void printStackTrace() {
-            System.out.println("Integral value " + (int) this.value + " exceeds required bounds: [0, 255]");
+            super(value, "Integral value " + (int) value + " exceeds required bounds: [0, 255]");
         }
     }
 
@@ -38,12 +46,7 @@ public class LoaderException extends Exception {
     public static class FileDimensionException extends LoaderException {
 
         public FileDimensionException(double value) {
-            super(value);
-        }
-
-        @Override
-        public void printStackTrace() {
-            System.out.println("Nonsquare file dimension: " + this.value);
+            super(value, "Nonsquare file dimension: " + value);
         }
     }
 
@@ -55,12 +58,8 @@ public class LoaderException extends Exception {
         private final String path;
 
         public UnreadablePathException(String path) {
+            super("File or directory does not exist: " + path);
             this.path = path;
-        }
-
-        @Override
-        public void printStackTrace() {
-            System.out.println("File or directory does not exist: " + this.path);
         }
     }
 
@@ -71,12 +70,8 @@ public class LoaderException extends Exception {
         private final String path;
 
         public DirectoryCreationException(String path) {
+            super("Failed to create missing directory: " + path);
             this.path = path;
-        }
-
-        @Override
-        public void printStackTrace() {
-            System.out.println("Failed to create missing directory: " + this.path);
         }
     }
 }
