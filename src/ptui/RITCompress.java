@@ -20,8 +20,6 @@ public class RITCompress {
 
     private static int dimension;
 
-    private static List<String> writeContents;
-
     private static RITQTNode treeContents;
 
     /**
@@ -40,10 +38,6 @@ public class RITCompress {
         writeValues.addAll(Arrays.asList(compressed));
 
         return writeValues;
-    }
-
-    public static List<String> writeContents() {
-        return writeContents;
     }
 
     public static RITQTNode treeContents() {

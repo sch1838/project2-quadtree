@@ -16,8 +16,6 @@ import java.util.List;
  */
 public class RITUncompress {
 
-    private static List<String> writeContents;
-
     private static RITQTNode treeContents;
 
     public static List<String> uncompress(String source) {
@@ -41,10 +39,6 @@ public class RITUncompress {
         }
 
         return writeValues;
-    }
-
-    public static List<String> writeContents() {
-        return writeContents;
     }
 
     public static RITQTNode treeContents() {
