@@ -1,12 +1,10 @@
 package gui;
 
 import javafx.application.Platform;
-import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
-import javafx.scene.layout.TilePane;
 import javafx.scene.shape.Rectangle;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
@@ -104,8 +102,8 @@ public class Display {
         output.getItems().add(new Label(message));
     }
 
-    public static ListView<Node> createButtonDisplay(Stage stage) {
-        ListView<Node> view = new ListView<>();
+    public static GridPane createButtonDisplay(Stage stage) {
+        GridPane view = new GridPane();
 
         GridPane pathDisplay = new GridPane();
             pathDisplay.setHgap(10);
@@ -132,7 +130,9 @@ public class Display {
 
             GridPane.setHgrow(sourceSelect, Priority.SOMETIMES);
 
-        TilePane actionBox = new TilePane();
+        GridPane actionPane = new GridPane();
+            TextField currentMode = new TextField(Mode.DISPLAY.name());
+                currentMode.setMaxWidth(Double.MAX_VALUE);
             MenuButton modeSelect = new MenuButton("Mode");
                 CheckMenuItem displayImage = new CheckMenuItem("Display Image");
                     displayImage.setSelected(true);
@@ -142,16 +142,19 @@ public class Display {
                         compressSource.setSelected(false);
                         uncompressSource.setSelected(false);
                         activeMode = Mode.DISPLAY;
+                        currentMode.setText(Mode.DISPLAY.name());
                     });
                     compressSource.setOnAction(actionEvent -> {
                         displayImage.setSelected(false);
                         uncompressSource.setSelected(false);
                         activeMode = Mode.COMPRESS;
+                        currentMode.setText(Mode.COMPRESS.name());
                     });
                     uncompressSource.setOnAction(actionEvent -> {
                         compressSource.setSelected(false);
                         displayImage.setSelected(false);
                         activeMode = Mode.UNCOMPRESS;
+                        currentMode.setText(Mode.UNCOMPRESS.name());
                     });
                 modeSelect.getItems().addAll(displayImage, compressSource, uncompressSource);
                 modeSelect.setMaxWidth(Double.MAX_VALUE);
@@ -162,10 +165,33 @@ public class Display {
             Button saveAs = new Button("Save As");
                 saveAs.setMaxWidth(Double.MAX_VALUE);
 
-            actionBox.getChildren().addAll(modeSelect, run, save, saveAs);
-            actionBox.setHgap(10);
+            actionPane.add(modeSelect, 0, 0);
+            actionPane.add(currentMode, 0, 1);
+            actionPane.add(run, 1, 0);
+            actionPane.add(save, 2, 0);
+            actionPane.add(saveAs, 3, 0);
 
-        view.getItems().addAll(pathDisplay, actionBox);
+            actionPane.setHgap(10);
+            actionPane.setVgap(12);
+
+            GridPane.setHgrow(run, Priority.ALWAYS);
+            GridPane.setHgrow(save, Priority.ALWAYS);
+            GridPane.setHgrow(saveAs, Priority.ALWAYS);
+
+        // Add empty rectangles to grid to add spacing between grid objects and window edge
+        view.add(new Rectangle(0, 0), 0, 0);
+        view.add(new Rectangle(0, 0), 2, 0);
+
+        // Set spacing for objects in the grid
+        view.setVgap(12);
+        view.setHgap(10);
+
+        // Add the path display and the action box to the grid
+        view.add(pathDisplay, 1, 1);
+        view.add(actionPane, 1, 2);
+
+        // Make sure all available space will be used by the path display
+        GridPane.setHgrow(pathDisplay, Priority.ALWAYS);
 
         return view;
     }
