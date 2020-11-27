@@ -1,5 +1,7 @@
 package model;
 
+import gui.Display;
+
 import java.io.*;
 import java.net.URL;
 import java.util.ArrayList;
@@ -32,6 +34,7 @@ public class FileLoader {
             // Handle nonexistent file
 
             f.printStackTrace();
+            Display.postOut(f.getMessage());
             System.out.println("File does not exist: " + absolutePath);
             System.exit(-1);
         } catch (IOException | LoaderException.IntegralColorException | LoaderException.UnreadablePathException | LoaderException.FileDimensionException e) {
@@ -39,6 +42,7 @@ public class FileLoader {
             // All LoaderException extensions can be handled in the same way because they override printStackTrace
 
             e.printStackTrace();
+            Display.postOut(e.getMessage());
             System.exit(-1);
         } catch (NumberFormatException n) {
             // Handle non-integral color values (NumberFormatException thrown when parsing lines as an integer)
@@ -46,6 +50,7 @@ public class FileLoader {
             // UnreadablePathException during the loadFileContents call that occurs in the try clause and is handled
             // before this one
 
+            Display.postOut(n.getMessage());
             System.out.println("Exception loading file: " + absolutePath + "\nFile contains a non-integral value");
             System.exit(-1);
         }
@@ -91,6 +96,8 @@ public class FileLoader {
             }
 
             reader.close();
+        } else {
+            throw new LoaderException.UnreadablePathException(absolutePath);
         }
 
         return lineValues;
@@ -107,6 +114,7 @@ public class FileLoader {
             writeFileContents(lineValues, absolutePath);
         } catch (LoaderException.DirectoryCreationException | IOException e) {
             // Handle nonexistent file, unreadable file, and failure to create file
+            Display.postOut(e.getMessage());
             e.printStackTrace();
             System.exit(-1);
         }
