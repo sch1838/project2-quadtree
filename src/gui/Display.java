@@ -9,6 +9,7 @@ import javafx.scene.shape.Rectangle;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import model.FileLoader;
+import model.QuadTree;
 import ptui.RITCompress;
 import ptui.RITUncompress;
 
@@ -226,6 +227,11 @@ public class Display {
                     if (sourcePath.contains(".txt")) {
                         activeContents = RITCompress.compress(sourcePath);
                         postOut("Compressed file at: " + sourcePath);
+                        postOut("QuadTree: " + QuadTree.preorder(RITCompress.treeContents()));
+                        double uncm = RITCompress.dimension(), comp = activeContents.size();
+                        postOut("Uncompressed image size: " + uncm);
+                        postOut("Compressed image size: " + comp);
+                        postOut("Compression: " + (uncm - comp) / uncm * 100.0D + "%");
                     } else {
                         postOut("Compress failed: Source file is not uncompressed");
                     }
@@ -233,6 +239,7 @@ public class Display {
                     if (sourcePath.contains(".rit")) {
                         activeContents = RITUncompress.uncompress(sourcePath);
                         postOut("Uncompressed file at: " + sourcePath);
+                        postOut("QuadTree: " + QuadTree.preorder(RITUncompress.treeContents()));
                     } else {
                         postOut("Uncompress failed: Source file is not compressed");
                     }

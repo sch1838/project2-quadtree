@@ -44,6 +44,10 @@ public class RITCompress {
         return treeContents;
     }
 
+    public static int dimension() {
+        return dimension;
+    }
+
     public static void main(String[] args) {
         if (args.length != 2) {
             // Handle missing or invalid argument(s)
@@ -58,9 +62,10 @@ public class RITCompress {
             FileLoader.secureWriteFileContents(writeValues, FileLoader.COMP_HEAD + destination);
             System.out.println("Output file: " + new File(FileLoader.COMP_HEAD + destination).getAbsolutePath());
 
-            int size = (int) Math.sqrt(dimension);
-            // TODO: fix below
-            System.out.println("Compression: " + dimension + " -> " + (size + 1) + " (" + (100 * (size + 1) / dimension));
+            double uncm = RITCompress.dimension(), comp = writeValues.size();
+            System.out.println("Uncompressed image size: " + uncm);
+            System.out.println("Compressed image size: " + comp);
+            System.out.println("Compression: " + (uncm - comp) / uncm * 100.0D + "%");
         }
     }
 }
