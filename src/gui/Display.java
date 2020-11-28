@@ -365,6 +365,8 @@ public class Display {
         run.setOnAction(actionEvent -> {
             String sourcePath = sourcePathField.getText();
 
+            // The run button handles display, compression, and uncompression
+
             if (!sourcePath.equals(NO_PATH)) {
                 if (activeMode == Mode.DISPLAY) {
                     if (sourcePath.contains(".txt")) {

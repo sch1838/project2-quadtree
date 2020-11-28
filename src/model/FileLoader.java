@@ -171,16 +171,21 @@ public class FileLoader {
         }
     }
 
-
+    /** Stores file paths alongside boolean values representing whether or not they represent compressed images. **/
     private static final Map<String, Boolean> compressionReference = new HashMap<>();
 
+    /** The file extension for compressed files **/
     private static final String COMP_EXTENSION = ".rit";
 
+    /**
+     * Evaluates the compression of a file based on its path. Returns true when the path represents a compressed file.
+     */
     private static boolean isFileCompressed(String path) {
         if(compressionReference.containsKey(path)) {
+            // Avoid startsWith call when path has already been checked
             return compressionReference.get(path);
         } else {
-            if(path.contains(COMP_EXTENSION)) {
+            if(path.startsWith(COMP_EXTENSION, path.length() - COMP_EXTENSION.length())) {
                 compressionReference.put(path, true);
                 return true;
             } else {
