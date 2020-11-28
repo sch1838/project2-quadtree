@@ -2,6 +2,7 @@ package gui;
 
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.shape.Rectangle;
@@ -117,6 +118,9 @@ public class Display {
         }
         changeMode(Mode.DISPLAY);
         zoom = 1;
+
+        sourcePathField.setText(NO_PATH);
+        destinationPathField.setText(NO_PATH);
 
         // Clear any displayed images
         scrollView.setContent(null);
@@ -240,7 +244,9 @@ public class Display {
                 fileMenu.getItems().add(exitItem);
             Menu viewMenu = new Menu("View");
                 viewMenu.getItems().add(zoomItem);
-            topPane.setTop(new MenuBar(fileMenu, viewMenu));
+            Menu helpMenu = new Menu("Help");
+                helpMenu.getItems().addAll(usageItem, extrasItem);
+            topPane.setTop(new MenuBar(fileMenu, viewMenu, helpMenu));
             topPane.setCenter(createButtonDisplay(stage));
 
         // Populate container
@@ -262,6 +268,67 @@ public class Display {
         });
 
         saveAs.setOnAction(actionEvent -> saveContentAs(stage));
+
+        usageItem.setOnAction(actionEvent -> {
+
+            GridPane contentPane = createUniformGridPane(3, 3, true);
+
+            TextArea area = new TextArea();
+            area.setEditable(false);
+            area.setWrapText(true);
+
+            area.setText(
+                    "Load source and destination files using their respective 'Select Path' buttons. The files that " +
+                    "will be available are limited by the active mode, which is visible below the 'Mode Select' button. " +
+                    "Once a source path has been designated, it becomes possible to complete an operation using the " +
+                    "'Run' button. If the selected operation produces an output, this output can then be saved using " +
+                    "either of the provided 'Save' buttons. Both 'Save' buttons will offer the same functionality if a " +
+                    "destination path has not already been selected. The 'Swap Paths' button will swap the source and " +
+                    "destination paths. The 'Reset' button will reset the display, paths, mode, and any stored data."
+            );
+
+            contentPane.add(area, 1, 1);
+            GridPane.setHgrow(area, Priority.ALWAYS);
+
+            createInformationWindow(stage, "Usage Information", new Scene(contentPane)).show();
+        });
+
+        extrasItem.setOnAction(actionEvent -> {
+            GridPane contentPane = createUniformGridPane(3, 3, true);
+
+            TextArea area = new TextArea();
+            area.setEditable(false);
+            area.setWrapText(true);
+
+            area.setText(
+                    "This program includes an additional zoom functionality that allows images to be viewed at a " +
+                    "maximum size of five times their original size. This functionality becomes less reliable when " +
+                    "with large images. Images that are larger than the window will be viewable using scroll bars that " +
+                    "appear accordingly."
+            );
+
+            contentPane.add(area, 1, 1);
+            GridPane.setHgrow(area, Priority.ALWAYS);
+
+            createInformationWindow(stage, "Extras Information", new Scene(contentPane)).show();
+        });
+    }
+
+    /**
+     * Provides a non-resizeable stage with the provided title that is centered on the main stage.
+     */
+    private static Stage createInformationWindow(Stage mainStage, String title, Scene scene) {
+        Stage window = new Stage();
+        window.setTitle(title);
+        window.setResizable(false);
+        Platform.runLater(() -> {
+            window.setX(mainStage.getX() + (mainStage.getWidth() / 2) - (window.getWidth() / 2));
+            window.setY(mainStage.getY() + (mainStage.getHeight() / 2) - (window.getHeight() / 2));
+        });
+
+        window.setScene(scene);
+
+        return window;
     }
     //</editor-fold>
 
@@ -386,7 +453,9 @@ public class Display {
     //<editor-fold desc="Menu Bar">
     private static final MenuItem
         exitItem = new MenuItem("Exit"),
-        zoomItem = new MenuItem("Zoom")
+        zoomItem = new MenuItem("Zoom"),
+        usageItem = new MenuItem("Usage"),
+        extrasItem = new MenuItem("Extras")
     ;
 
     static {
