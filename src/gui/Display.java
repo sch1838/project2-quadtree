@@ -3,9 +3,7 @@ package gui;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.scene.control.*;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.Priority;
+import javafx.scene.layout.*;
 import javafx.scene.shape.Rectangle;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
@@ -16,6 +14,7 @@ import ptui.RITUncompress;
 
 import java.io.File;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 /**
@@ -99,6 +98,9 @@ public class Display {
     /** The root container of all gui elements. **/
     private static final BorderPane container = new BorderPane();
 
+    /** Enables viewing of images larger than the default window size. **/
+    private static final ScrollPane scrollView = new ScrollPane();
+
     /**
      * Provides {@link Display#container} to be used in {@link RITGUI}.
      */
@@ -117,9 +119,16 @@ public class Display {
         zoom = 1;
 
         // Clear any displayed images
-        container.setCenter(null);
+        scrollView.setContent(null);
 
         postOut("Reset program data");
+    }
+
+    /**
+     * The Mode enum enumerates the three possible modes for the application.
+     */
+    enum Mode {
+        COMPRESS, UNCOMPRESS, DISPLAY
     }
     //</editor-fold>
 
@@ -129,12 +138,10 @@ public class Display {
      * Organizes the main button display for the GUI. This includes all of the functional components of the application.
      */
     private static GridPane createButtonDisplay(Stage stage) {
-        GridPane view = new GridPane();
+        GridPane view = createUniformGridPane(3, 4, true);
 
         // Setup display for path selection
-        GridPane pathDisplay = new GridPane();
-            pathDisplay.setHgap(10);
-            pathDisplay.setVgap(12);
+        GridPane pathDisplay = createUniformGridPane(3, 2, false);
             pathDisplay.add(new Label("Source: "), 0, 0);
             pathDisplay.add(new Label("Destination: "), 0, 1);
 
@@ -145,25 +152,15 @@ public class Display {
             pathDisplay.add(destinationSelect, 2, 1);
 
         // Setup display for operations/actions
-        GridPane actionPane = new GridPane();
+        GridPane actionPane = createUniformGridPane(2, 2, false);
             actionPane.add(modeSelect, 0, 0);
             actionPane.add(currentMode, 0, 1);
-            actionPane.add(run, 1, 0);
-            actionPane.add(save, 2, 0);
-            actionPane.add(saveAs, 3, 0);
-            actionPane.add(swap, 4, 0);
-            actionPane.add(reset, 5, 0);
-
-            actionPane.setHgap(10);
-            actionPane.setVgap(12);
-
-        // Add empty rectangles to grid to add spacing between grid objects and window edge
-        view.add(new Rectangle(0, 0), 0, 0);
-        view.add(new Rectangle(0, 0), 2, 0);
-
-        // Set spacing for objects in the grid
-        view.setVgap(12);
-        view.setHgap(10);
+            TilePane buttonPane = new TilePane();
+                GridPane.setHgrow(buttonPane, Priority.ALWAYS);
+                buttonPane.setHgap(10);
+                buttonPane.setVgap(12);
+                buttonPane.getChildren().addAll(run, save, saveAs, swap, reset);
+            actionPane.add(buttonPane, 1, 0);
 
         // Add the path display and the action box to the grid
         view.add(pathDisplay, 1, 1);
@@ -173,6 +170,23 @@ public class Display {
         GridPane.setHgrow(pathDisplay, Priority.ALWAYS);
 
         return view;
+    }
+
+    /**
+     * Provides a new GridPane with uniform spacing and empty indices to create space between grid contents and the
+     * window borders.
+     */
+    private static GridPane createUniformGridPane(int width, int height, boolean spacers) {
+        GridPane pane = new GridPane();
+        if(spacers) {
+            pane.add(new Rectangle(0, 0), 0, 0);
+            pane.add(new Rectangle(0, 0), width - 1, 0);
+            pane.add(new Rectangle(0, 0), 0, height - 1);
+            pane.add(new Rectangle(0, 0), width - 1, height - 1);
+        }
+        pane.setVgap(12);
+        pane.setHgap(10);
+        return pane;
     }
     //</editor-fold>
 
@@ -220,11 +234,23 @@ public class Display {
         GridPane.setHgrow(sourcePathField, Priority.ALWAYS);
         GridPane.setHgrow(destinationPathField, Priority.ALWAYS);
 
-        // Populate main container
-        container.setTop(createButtonDisplay(stage));
-        container.setCenter(new Rectangle(1024, 384));
-        Platform.runLater(() -> container.setCenter(null));
-        container.setBottom(output);
+        // Top of container is another borderpane to include a menubar and the button display
+        BorderPane topPane = new BorderPane();
+            Menu fileMenu = new Menu("File");
+                fileMenu.getItems().add(exitItem);
+            Menu viewMenu = new Menu("View");
+                viewMenu.getItems().add(zoomItem);
+            topPane.setTop(new MenuBar(fileMenu, viewMenu));
+            topPane.setCenter(createButtonDisplay(stage));
+
+        // Populate container
+        container.setTop(topPane);
+        container.setCenter(new Rectangle(1024, 512));
+        Platform.runLater(() -> container.setCenter(scrollView));
+        GridPane outputPane = createUniformGridPane(3, 4, true);
+            outputPane.add(new Label("Program Output: "), 1, 1);
+            outputPane.add(output, 1, 2);
+        container.setBottom(outputPane);
 
         save.setOnAction(actionEvent -> {
             // Save-as if nonexistent destination
@@ -277,7 +303,11 @@ public class Display {
                     if (sourcePath.contains(".txt")) {
                         List<Integer> content = FileLoader.secureLoadFileContents(sourcePath);
                         if(!content.isEmpty()) {
-                            container.setCenter(RITViewer.fillCanvas(content, zoom));
+                            // Center the displayed image in a stackpane that is the same size as the scrollView
+                            StackPane centeringPane = new StackPane(RITViewer.fillCanvas(content, zoom));
+                            centeringPane.setMinWidth(scrollView.getWidth());
+                            centeringPane.setMinHeight(scrollView.getHeight());
+                            scrollView.setContent(centeringPane);
                             postOut("Displayed uncompressed image at: " + sourcePath);
                         }
                     } else {
@@ -330,6 +360,9 @@ public class Display {
         currentMode.setEditable(false);
     }
 
+    /**
+     * Configures an array of buttons.
+     */
     private static void configureButtons(Button... buttons) {
         for (Button button : buttons) {
             button.setMaxWidth(Double.MAX_VALUE);
@@ -337,6 +370,9 @@ public class Display {
         }
     }
 
+    /**
+     * Changes the current operational mode.
+     */
     private static void changeMode(Mode mode) {
         displayImage.setSelected(mode == Mode.DISPLAY);
         compressSource.setSelected(mode == Mode.COMPRESS);
@@ -347,6 +383,36 @@ public class Display {
     }
     //</editor-fold>
 
+    //<editor-fold desc="Menu Bar">
+    private static final MenuItem
+        exitItem = new MenuItem("Exit"),
+        zoomItem = new MenuItem("Zoom")
+    ;
+
+    static {
+        // Exit should exit the program
+        exitItem.setOnAction(actionEvent -> System.exit(0));
+
+        // Zoom opens dialogue that allows user to change zoom value
+        zoomItem.setOnAction(actionEvent -> {
+            TextInputDialog dialog = new TextInputDialog("" + zoom);
+            dialog.setHeaderText("Input a new zoom value between 1 and 5.");
+            Optional<String> input = dialog.showAndWait();
+            if (input.isPresent()) {
+                try {
+                    int value = Integer.parseInt(input.get());
+                    value = Math.max(1, value);
+                    value = Math.min(5, value);
+                    zoom = value;
+                } catch (NumberFormatException n) {
+                    postOut("Failed to update zoom: Non-integral value provided");
+                }
+            }
+        });
+    }
+    //</editor-fold>
+
+    //<editor-fold desc="Program Output">
     /** The program output text area. **/
     private static final TextArea output = new TextArea();
 
@@ -354,6 +420,8 @@ public class Display {
         // The output area should not be modifiable but should wrap text
         output.setWrapText(true);
         output.setEditable(false);
+
+        GridPane.setHgrow(output, Priority.ALWAYS);
     }
 
     /**
@@ -373,11 +441,5 @@ public class Display {
         alert.setContentText(message);
         alert.showAndWait();
     }
-
-    /**
-     * The Mode enum enumerates the three possible modes for the application.
-     */
-    enum Mode {
-        COMPRESS, UNCOMPRESS, DISPLAY
-    }
+    //</editor-fold>
 }
