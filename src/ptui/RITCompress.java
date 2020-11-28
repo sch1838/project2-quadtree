@@ -61,12 +61,12 @@ public class RITCompress {
             System.out.println("Compressing: " + source);
 
             // Perform compression
-            List<String> writeValues = compress(FileLoader.UNCM_HEAD + source);
+            List<String> writeValues = compress(source);
             System.out.println("QuadTree: " + QuadTree.preorder(treeContents()));
 
             // Write compressed data to the output file
-            FileLoader.secureWriteFileContents(writeValues, FileLoader.COMP_HEAD + destination);
-            System.out.println("Output file: " + new File(FileLoader.COMP_HEAD + destination).getAbsolutePath());
+            FileLoader.secureWriteFileContents(writeValues, destination);
+            System.out.println("Output file: " + new File(destination).getAbsolutePath());
 
             // Print compression information
             double uncm = RITCompress.uncompressedSize(), comp = writeValues.size();

@@ -66,10 +66,10 @@ public class LoaderException extends Exception {
     /**
      * DirectoryCreationExceptions should be thrown during erroneous directory creations.
      */
-    public static class DirectoryCreationException extends LoaderException {
+    public static class FileCreationException extends LoaderException {
         private final String path;
 
-        public DirectoryCreationException(String path) {
+        public FileCreationException(String path) {
             super("Failed to create missing directory: " + path);
             this.path = path;
         }

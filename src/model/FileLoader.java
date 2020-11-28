@@ -17,15 +17,17 @@ import java.util.Map;
  */
 public class FileLoader {
 
-    public static final String COMP_HEAD = "images/compressed/", UNCM_HEAD = "images/uncompressed/";
-
-    public static List<Integer> secureLoadFileContents(String absolutePath) {
+    /**
+     * Attempts to load the contents of a file at the provided path into a list of integers. This method is used to call
+     * {@link FileLoader#loadFileContents(String)} with attention to thrown exceptions.
+     */
+    public static List<Integer> secureLoadFileContents(String path) {
         try {
             // Attempt to load the file from the uncompressed image directory
 
-            List<Integer> lineValues = FileLoader.loadFileContents(absolutePath);
+            List<Integer> lineValues = FileLoader.loadFileContents(path);
             double dimension = Math.sqrt(lineValues.size());
-            if (!isFileCompressed(absolutePath) && Math.floor(dimension) != dimension) {
+            if (!isFileCompressed(path) && Math.floor(dimension) != dimension) {
                 // Do not check dimension when loading compressed files
                 throw new LoaderException.FileDimensionException(dimension);
             } else {
@@ -35,30 +37,30 @@ public class FileLoader {
             // Handle nonexistent file
 
             f.printStackTrace();
-            Display.postException(f.getMessage());
-            System.out.println("File does not exist: " + absolutePath);
-            if(!RITGUI.active) {
+            System.out.println("File does not exist: " + path);
+            if (!RITGUI.active) {
                 System.exit(-1);
+            } else {
+                Display.postException(f.getMessage());
             }
         } catch (IOException | LoaderException.IntegralColorException | LoaderException.UnreadablePathException | LoaderException.FileDimensionException e) {
             // Handle generic IOException, unreadable files, nonsquare files, and color value not in valid range
             // All LoaderException extensions can be handled in the same way because they override printStackTrace
 
             e.printStackTrace();
-            Display.postException(e.getMessage());
-            if(!RITGUI.active) {
+            if (!RITGUI.active) {
                 System.exit(-1);
+            } else {
+                Display.postException(e.getMessage());
             }
         } catch (NumberFormatException n) {
             // Handle non-integral color values (NumberFormatException thrown when parsing lines as an integer)
-            // If UNCM is null, this clause will not be reached - a null UNCM case is thrown as an
-            // UnreadablePathException during the loadFileContents call that occurs in the try clause and is handled
-            // before this one
 
-            Display.postException(n.getMessage());
-            System.out.println("Exception loading file: " + absolutePath + "\nFile contains a non-integral value");
-            if(!RITGUI.active) {
+            System.out.println("Exception loading file: " + path + "\nFile contains a non-integral value");
+            if (!RITGUI.active) {
                 System.exit(-1);
+            } else {
+                Display.postException(n.getMessage());
             }
         }
 
@@ -77,13 +79,13 @@ public class FileLoader {
      * @throws NumberFormatException Thrown when a file contains a non-integral value
      * @throws LoaderException.UnreadablePathException Thrown when the provided path cannot be read
      */
-    private static List<Integer> loadFileContents(String absolutePath) throws IOException, LoaderException.IntegralColorException, NumberFormatException, LoaderException.UnreadablePathException {
+    private static List<Integer> loadFileContents(String path) throws IOException, LoaderException.IntegralColorException, NumberFormatException, LoaderException.UnreadablePathException {
 
-        File file = new File(absolutePath);
+        File file = new File(path);
 
         List<Integer> lineValues = new ArrayList<>();
 
-        if(file.exists()) {
+        if(file.exists() && !file.isDirectory()) {
 
             // Open a reader in the file
             BufferedReader reader = new BufferedReader(new FileReader(file));
@@ -93,7 +95,7 @@ public class FileLoader {
             while ((line = reader.readLine()) != null) {
                 int value = Integer.parseInt(line);
 
-                if (!isFileCompressed(absolutePath) && (value < 0 || 255 < value)) {
+                if (!isFileCompressed(path) && (value < 0 || 255 < value)) {
                     // Do not check colors when loading compressed files
 
                     throw new LoaderException.IntegralColorException(value);
@@ -104,7 +106,7 @@ public class FileLoader {
 
             reader.close();
         } else {
-            throw new LoaderException.UnreadablePathException(absolutePath);
+            throw new LoaderException.UnreadablePathException(path);
         }
 
         return lineValues;
@@ -116,15 +118,17 @@ public class FileLoader {
      * <p>This method is used to call {@link FileLoader#writeFileContents(List, String)} with automatic attention
      * to any thrown exceptions.</p>
      */
-    public static void secureWriteFileContents(List<?> lineValues, String absolutePath) {
+    public static void secureWriteFileContents(List<?> lineValues, String path) {
         try {
-            writeFileContents(lineValues, absolutePath);
-        } catch (LoaderException.DirectoryCreationException | IOException e) {
+            writeFileContents(lineValues, path);
+        } catch (LoaderException.FileCreationException | IOException | LoaderException.UnreadablePathException e) {
             // Handle nonexistent file, unreadable file, and failure to create file
-            Display.postException(e.getMessage());
+
             e.printStackTrace();
             if(!RITGUI.active) {
                 System.exit(-1);
+            } else {
+                Display.postException(e.getMessage());
             }
         }
     }
@@ -135,30 +139,36 @@ public class FileLoader {
      * <p>Each object in lineValues will be written to its own line in an existent file. If the file does not exist,
      * this method will attempt to create it.</p>
      *
-     * @throws LoaderException.DirectoryCreationException Thrown when a file cannot be created at the provided path
+     * @throws LoaderException.FileCreationException Thrown when a file cannot be created at the provided path
+     * @throws LoaderException.UnreadablePathException Thrown when the file at the provided path is a directory
      */
-    private static void writeFileContents(List<?> lineValues, String absolutePath) throws LoaderException.DirectoryCreationException, IOException {
-        File file = new File(absolutePath);
+    private static void writeFileContents(List<?> lineValues, String path) throws LoaderException.FileCreationException, IOException, LoaderException.UnreadablePathException {
+        File file = new File(path);
 
         if (!file.exists()) {
 
             // Attempt to create file if it does not exist
-            if(!file.mkdirs()) {
+            if (!file.createNewFile()) {
 
                 // Except when the file cannot be created
-                throw new LoaderException.DirectoryCreationException(file.getPath());
+                throw new LoaderException.FileCreationException(file.getPath());
             }
         }
 
-        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file)));
+        if (!file.isDirectory()) {
+            // Cannot write text to a directory
+            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file)));
 
-        for (Object value : lineValues) {
-            // Write each value to its own line in the file
-            writer.write(value.toString());
-            writer.newLine();
+            for (Object value : lineValues) {
+                // Write each value to its own line in the file
+                writer.write(value.toString());
+                writer.newLine();
+            }
+
+            writer.close();
+        } else {
+            throw new LoaderException.UnreadablePathException("Invalid path " + file.getPath() + " is a directory not a file");
         }
-
-        writer.close();
     }
 
 

@@ -21,7 +21,7 @@ public class RITViewer extends Application {
 
     @Override
     public void start(Stage stage) throws Exception {
-        List<Integer> lineValues = FileLoader.secureLoadFileContents(FileLoader.UNCM_HEAD + path);
+        List<Integer> lineValues = FileLoader.secureLoadFileContents(path);
 
         stage.setScene(new Scene(new Group(fillCanvas(lineValues, 1))));
         stage.show();

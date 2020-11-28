@@ -64,12 +64,12 @@ public class RITUncompress {
             System.out.println("Uncompressing: " + source);
 
             // Uncompress file
-            List<String> writeValues = uncompress(FileLoader.COMP_HEAD + source);
+            List<String> writeValues = uncompress(source);
             System.out.println("QuadTree: " + QuadTree.preorder(treeContents()));
 
             // Write uncompressed content to output file
-            FileLoader.secureWriteFileContents(writeValues, FileLoader.UNCM_HEAD + destination);
-            System.out.println("Output file: " + new File(FileLoader.UNCM_HEAD + destination).getAbsolutePath());
+            FileLoader.secureWriteFileContents(writeValues, destination);
+            System.out.println("Output file: " + new File(destination).getAbsolutePath());
         }
     }
 }
